@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db, auth } from '../firebase';
-import { signOut } from 'firebase/auth';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { signOut, deleteUser } from 'firebase/auth';
+import { collection, query, where, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import { useNavigate, Link } from 'react-router-dom';
 
 function Dashboard() {
@@ -15,6 +15,24 @@ function Dashboard() {
       navigate('/');
     } catch (error) {
       console.error('Failed to log out', error);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (window.confirm("Are you sure you want to delete your account? This cannot be undone.")) {
+      try {
+        // Delete Firestore document first
+        await deleteDoc(doc(db, 'users', currentUser.uid));
+        // Delete Auth user
+        await deleteUser(currentUser);
+        navigate('/');
+      } catch (error) {
+        if (error.code === 'auth/requires-recent-login') {
+          alert("Please log out and log back in to verify your identity before deleting your account.");
+        } else {
+          alert("Failed to delete account: " + error.message);
+        }
+      }
     }
   };
 
@@ -111,9 +129,14 @@ function Dashboard() {
           </div>
         )}
 
-        <button onClick={handleLogout} className="btn-outline">
-          Sign Out
-        </button>
+        <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+          <button onClick={handleLogout} className="btn-outline">
+            Sign Out
+          </button>
+          <button onClick={handleDeleteAccount} className="btn-outline" style={{ borderColor: 'red', color: 'red' }}>
+            Delete Account
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import EditProfile from './pages/EditProfile';
 import Search from './pages/Search';
 import BookDemo from './pages/BookDemo';
+import TutorProfile from './pages/TutorProfile';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './App.css';
 
@@ -31,6 +32,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/search" element={<Search />} />
+          <Route path="/tutor/:tutorId" element={<TutorProfile />} />
           <Route path="/book/:tutorId" element={<BookDemo />} />
           <Route 
             path="/dashboard" 

@@ -100,7 +100,7 @@ function Home() {
               <div className="tutor-header"><h3>Mr. Rahul Sharma</h3><div className="rating"><i className="ri-star-fill"></i> 4.9</div></div>
               <p className="tutor-subject">Mathematics & Science</p>
               <p className="tutor-classes">Classes 6 to 10</p>
-              <div className="tutor-footer"><span className="experience"><i className="ri-briefcase-4-line"></i> 5 Years Exp.</span><button className="btn-outline">View Profile</button></div>
+              <div className="tutor-footer"><span className="experience"><i className="ri-briefcase-4-line"></i> 5 Years Exp.</span><button className="btn-outline" onClick={() => navigate('/search')}>Find Similar</button></div>
             </div>
           </div>
           <div className="tutor-card">
@@ -109,7 +109,7 @@ function Home() {
               <div className="tutor-header"><h3>Ms. Priya Verma</h3><div className="rating"><i className="ri-star-fill"></i> 4.8</div></div>
               <p className="tutor-subject">English & Social Studies</p>
               <p className="tutor-classes">Classes 1 to 8</p>
-              <div className="tutor-footer"><span className="experience"><i className="ri-briefcase-4-line"></i> 3 Years Exp.</span><button className="btn-outline">View Profile</button></div>
+              <div className="tutor-footer"><span className="experience"><i className="ri-briefcase-4-line"></i> 3 Years Exp.</span><button className="btn-outline" onClick={() => navigate('/search')}>Find Similar</button></div>
             </div>
           </div>
         </div>

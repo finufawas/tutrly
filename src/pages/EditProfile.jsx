@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { db } from '../firebase';
+import { db, storage } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useNavigate } from 'react-router-dom';
 
 function EditProfile() {
@@ -15,8 +16,10 @@ function EditProfile() {
     bio: '',
     hourlyRate: '',
     subjects: [],
-    classLevels: []
+    classLevels: [],
+    photoURL: ''
   });
+  const [imageFile, setImageFile] = useState(null);
 
   const availableSubjects = ['Mathematics', 'Science', 'English', 'Social Studies', 'Hindi'];
   const availableClasses = ['Class 1-5', 'Class 6-8', 'Class 9-10'];
@@ -28,7 +31,8 @@ function EditProfile() {
         bio: userData.bio || '',
         hourlyRate: userData.hourlyRate || '',
         subjects: userData.subjects || [],
-        classLevels: userData.classLevels || []
+        classLevels: userData.classLevels || [],
+        photoURL: userData.photoURL || ''
       });
     }
   }, [userData]);
@@ -51,13 +55,22 @@ function EditProfile() {
     setError('');
 
     try {
+      let currentPhotoURL = formData.photoURL;
+
+      if (imageFile) {
+        const imageRef = ref(storage, `profileImages/${currentUser.uid}`);
+        await uploadBytes(imageRef, imageFile);
+        currentPhotoURL = await getDownloadURL(imageRef);
+      }
+
       const userRef = doc(db, 'users', currentUser.uid);
       await updateDoc(userRef, {
         name: formData.name,
         bio: formData.bio,
         hourlyRate: Number(formData.hourlyRate),
         subjects: formData.subjects,
-        classLevels: formData.classLevels
+        classLevels: formData.classLevels,
+        photoURL: currentPhotoURL
       });
       // Force reload to get fresh data context or navigate to dashboard where it might trigger re-render
       // We removed window.location.reload() to prevent 404s on GitHub Pages.
@@ -77,6 +90,17 @@ function EditProfile() {
         {error && <div style={{ color: 'red', marginBottom: '1rem', padding: '1rem', background: '#fee2e2', borderRadius: '0.5rem' }}>{error}</div>}
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Profile Picture</label>
+            {formData.photoURL && <img src={formData.photoURL} alt="Profile" style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', marginBottom: '1rem' }} />}
+            <input 
+              type="file" 
+              accept="image/*"
+              onChange={(e) => setImageFile(e.target.files[0])}
+              style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}
+            />
+          </div>
+
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Full Name</label>
             <input 

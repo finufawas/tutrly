@@ -97,7 +97,7 @@ function Search() {
             {tutors.map(tutor => (
               <div key={tutor.id} className="tutor-card">
                 <div className="tutor-image">
-                  <img src={tutorPlaceholder} alt={tutor.name} />
+                  <img src={tutor.photoURL || tutorPlaceholder} alt={tutor.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <div className="tutor-info">
                   <div className="tutor-header">
@@ -113,7 +113,7 @@ function Search() {
                     <span className="experience" style={{ fontWeight: 'bold', color: '#0f172a' }}>
                       ₹{tutor.hourlyRate || 0} / hr
                     </span>
-                    <Link to={`/book/${tutor.id}`} className="btn-outline" style={{ display: 'inline-block', textAlign: 'center' }}>Book Demo</Link>
+                    <Link to={`/tutor/${tutor.id}`} className="btn-outline" style={{ display: 'inline-block', textAlign: 'center' }}>View Profile</Link>
                   </div>
                 </div>
               </div>
