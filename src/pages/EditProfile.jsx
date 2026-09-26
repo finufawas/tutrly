@@ -60,9 +60,9 @@ function EditProfile() {
         classLevels: formData.classLevels
       });
       // Force reload to get fresh data context or navigate to dashboard where it might trigger re-render
-      // In a real app we'd want to update the AuthContext state too, but reloading window is a quick way for now
+      // We removed window.location.reload() to prevent 404s on GitHub Pages.
+      // AuthContext now uses onSnapshot to update data in real-time!
       navigate('/dashboard');
-      window.location.reload(); 
     } catch (err) {
       setError('Failed to update profile: ' + err.message);
     }
