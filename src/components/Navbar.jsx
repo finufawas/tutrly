@@ -1,0 +1,49 @@
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+
+function Navbar() {
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+  const isHomePage = location.pathname === '/';
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const smoothScroll = (e, targetId) => {
+    if (!isHomePage) return; // Let default routing happen if not on home
+    e.preventDefault();
+    const element = document.querySelector(targetId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+    setMobileMenuOpen(false);
+  };
+
+  return (
+    <nav className="navbar" style={{ background: scrolled ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.7)', boxShadow: scrolled ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none' }}>
+      <div className="logo">
+        <Link to="/" style={{ color: 'inherit', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <i className="ri-book-open-line"></i> Tutrly
+        </Link>
+      </div>
+      <div className="nav-links" style={{ display: mobileMenuOpen ? 'flex' : '' }}>
+        <Link to="/" onClick={(e) => smoothScroll(e, '#home')}>Home</Link>
+        <Link to={isHomePage ? "/" : "/"} onClick={(e) => smoothScroll(e, '#how-it-works')}>How it Works</Link>
+        <Link to={isHomePage ? "/" : "/"} onClick={(e) => smoothScroll(e, '#find-tutor')}>Find Tutor</Link>
+        <Link to={isHomePage ? "/" : "/"} className="btn-secondary" onClick={(e) => smoothScroll(e, '#become-tutor')}>Become a Tutor</Link>
+        <Link to="/login" className="btn-primary" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
+      </div>
+      <div className="mobile-menu-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+        <i className="ri-menu-line"></i>
+      </div>
+    </nav>
+  );
+}
+
+export default Navbar;
