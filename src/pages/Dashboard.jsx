@@ -34,7 +34,7 @@ function Dashboard() {
             <div style={{ padding: '1.5rem', border: '1px solid #E2E8F0', borderRadius: '0.5rem' }}>
               <h3 style={{ marginBottom: '0.5rem' }}><i className="ri-user-settings-line"></i> Profile Settings</h3>
               <p style={{ marginBottom: '1rem' }}>Update your bio, subjects, and hourly rate so parents can find you.</p>
-              <button className="btn-secondary">Edit Profile</button>
+              <button className="btn-secondary" onClick={() => navigate('/edit-profile')}>Edit Profile</button>
             </div>
             <div style={{ padding: '1.5rem', border: '1px solid #E2E8F0', borderRadius: '0.5rem' }}>
               <h3 style={{ marginBottom: '0.5rem' }}><i className="ri-calendar-check-line"></i> Upcoming Classes</h3>
