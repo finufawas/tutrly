@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { auth } from '../firebase';
+import { auth, db } from '../firebase';
+import { doc, setDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './Login.css';
@@ -24,8 +25,20 @@ function Login() {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
-        // Here we could also save the user's name and role to Firestore database
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        
+        // Save user profile to Firestore
+        await setDoc(doc(db, 'users', userCredential.user.uid), {
+          name: name,
+          email: email,
+          role: role,
+          createdAt: new Date().toISOString(),
+          // Optional tutor fields that can be filled out later
+          subjects: [],
+          classLevels: [],
+          bio: '',
+          hourlyRate: 0
+        });
       }
       navigate('/dashboard');
     } catch (err) {
