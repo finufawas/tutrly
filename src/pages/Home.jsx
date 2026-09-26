@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import heroTutorImg from '../assets/images/hero_tutor.jpg';
 import tutor1Img from '../assets/images/tutor_1.jpg';
 import tutor2Img from '../assets/images/tutor_2.jpg';
 
 function Home() {
+  const navigate = useNavigate();
   const [classLevel, setClassLevel] = useState('');
   const [subject, setSubject] = useState('');
 
@@ -122,7 +124,12 @@ function Home() {
         <div className="cta-content">
           <h2>Are you an expert educator?</h2>
           <p>Join our platform, set your own schedule, and help students achieve their goals while earning.</p>
-          <button className="btn-primary btn-large">Register as a Tutor</button>
+          <button 
+            className="btn-primary btn-large" 
+            onClick={() => navigate('/login', { state: { isSignup: true, role: 'tutor' } })}
+          >
+            Register as a Tutor
+          </button>
         </div>
       </section>
     </>

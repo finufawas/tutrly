@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { auth } from '../firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './Login.css';
 
 function Login() {
-  const [isLogin, setIsLogin] = useState(true);
+  const location = useLocation();
+  const [isLogin, setIsLogin] = useState(location.state?.isSignup ? false : true);
+  const [role, setRole] = useState(location.state?.role || 'parent');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -64,7 +66,7 @@ function Login() {
           {!isLogin && (
             <div className="form-group">
               <label>Account Type</label>
-              <select required>
+              <select value={role} onChange={(e) => setRole(e.target.value)} required>
                 <option value="parent">Parent / Student</option>
                 <option value="tutor">Tutor</option>
               </select>
