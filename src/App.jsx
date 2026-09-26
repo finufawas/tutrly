@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import heroTutorImg from './assets/images/hero_tutor.jpg';
+import tutor1Img from './assets/images/tutor_1.jpg';
+import tutor2Img from './assets/images/tutor_2.jpg';
 
 function App() {
   const [scrolled, setScrolled] = useState(false);
@@ -84,7 +87,7 @@ function App() {
           </div>
         </div>
         <div className="hero-image">
-          <img src="/assets/images/hero_tutor.jpg" alt="Home Tutoring" />
+          <img src={heroTutorImg} alt="Home Tutoring" />
           <div className="floating-card rating-card">
             <div className="stars">
               <i className="ri-star-fill"></i><i className="ri-star-fill"></i><i className="ri-star-fill"></i><i className="ri-star-fill"></i><i className="ri-star-fill"></i>
@@ -132,7 +135,7 @@ function App() {
         </div>
         <div className="tutors-grid">
           <div className="tutor-card">
-            <div className="tutor-image"><img src="/assets/images/tutor_1.jpg" alt="Mr. Sharma" /><span className="tutor-badge">Verified</span></div>
+            <div className="tutor-image"><img src={tutor1Img} alt="Mr. Sharma" /><span className="tutor-badge">Verified</span></div>
             <div className="tutor-info">
               <div className="tutor-header"><h3>Mr. Rahul Sharma</h3><div className="rating"><i className="ri-star-fill"></i> 4.9</div></div>
               <p className="tutor-subject">Mathematics & Science</p>
@@ -141,7 +144,7 @@ function App() {
             </div>
           </div>
           <div className="tutor-card">
-            <div className="tutor-image"><img src="/assets/images/tutor_2.jpg" alt="Ms. Verma" /><span className="tutor-badge">Verified</span></div>
+            <div className="tutor-image"><img src={tutor2Img} alt="Ms. Verma" /><span className="tutor-badge">Verified</span></div>
             <div className="tutor-info">
               <div className="tutor-header"><h3>Ms. Priya Verma</h3><div className="rating"><i className="ri-star-fill"></i> 4.8</div></div>
               <p className="tutor-subject">English & Social Studies</p>
