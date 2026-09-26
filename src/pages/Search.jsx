@@ -8,6 +8,7 @@ function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
   const classParam = searchParams.get('class') || '';
   const subjectParam = searchParams.get('subject') || '';
+  const boardParam = searchParams.get('board') || '';
   
   const [tutors, setTutors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,6 +16,7 @@ function Search() {
   // Form states so they can change the search on this page
   const [classLevel, setClassLevel] = useState(classParam);
   const [subject, setSubject] = useState(subjectParam);
+  const [board, setBoard] = useState(boardParam);
 
   const fetchTutors = async () => {
     setLoading(true);
@@ -32,7 +34,10 @@ function Search() {
         results = results.filter(t => t.classLevels && t.classLevels.includes(classParam));
       }
       if (subjectParam) {
-        results = results.filter(t => t.subjects && t.subjects.includes(subjectParam));
+        results = results.filter(t => t.subjects && t.subjects.some(s => s.toLowerCase().includes(subjectParam.toLowerCase())));
+      }
+      if (boardParam) {
+        results = results.filter(t => t.boards && t.boards.includes(boardParam));
       }
 
       setTutors(results);
@@ -44,11 +49,11 @@ function Search() {
 
   useEffect(() => {
     fetchTutors();
-  }, [classParam, subjectParam]);
+  }, [classParam, subjectParam, boardParam]);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    setSearchParams({ class: classLevel, subject: subject });
+    setSearchParams({ class: classLevel, subject: subject, board: board });
   };
 
   return (
@@ -62,26 +67,32 @@ function Search() {
             <select 
               value={classLevel} 
               onChange={(e) => setClassLevel(e.target.value)}
-              style={{ flex: '1', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', minWidth: '200px' }}
+              style={{ flex: '1', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', minWidth: '150px' }}
             >
               <option value="">All Classes</option>
-              <option value="Class 1-5">Class 1-5</option>
-              <option value="Class 6-8">Class 6-8</option>
-              <option value="Class 9-10">Class 9-10</option>
+              {[...Array(12)].map((_, i) => (
+                <option key={i+1} value={`Class ${i+1}`}>Class {i+1}</option>
+              ))}
+            </select>
+
+            <select 
+              value={board} 
+              onChange={(e) => setBoard(e.target.value)}
+              style={{ flex: '1', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', minWidth: '150px' }}
+            >
+              <option value="">All Boards</option>
+              <option value="State">State Board</option>
+              <option value="CBSE">CBSE</option>
+              <option value="ICSE">ICSE</option>
             </select>
             
-            <select 
+            <input 
+              type="text" 
+              placeholder="Subject (e.g. Math)"
               value={subject} 
               onChange={(e) => setSubject(e.target.value)}
-              style={{ flex: '1', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', minWidth: '200px' }}
-            >
-              <option value="">All Subjects</option>
-              <option value="Mathematics">Mathematics</option>
-              <option value="Science">Science</option>
-              <option value="English">English</option>
-              <option value="Social Studies">Social Studies</option>
-              <option value="Hindi">Hindi</option>
-            </select>
+              style={{ flex: '1', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', minWidth: '150px' }}
+            />
             
             <button type="submit" className="btn-primary" style={{ padding: '0.75rem 2rem' }}>Search</button>
           </form>

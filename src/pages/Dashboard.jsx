@@ -61,7 +61,7 @@ function Dashboard() {
                   {bookings.map(b => (
                     <div key={b.id} style={{ padding: '1rem', background: '#f8fafc', borderRadius: '0.5rem', borderLeft: '4px solid #3b82f6' }}>
                       <p style={{ fontWeight: 'bold' }}>{b.parentName}</p>
-                      <p style={{ fontSize: '0.9rem', color: '#64748B' }}>{b.date} • {b.timeSlot}</p>
+                      <p style={{ fontSize: '0.9rem', color: '#64748B' }}>{b.date} • {b.startTime} - {b.endTime}</p>
                       {b.message && <p style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>"{b.message}"</p>}
                     </div>
                   ))}
@@ -87,7 +87,7 @@ function Dashboard() {
                   {bookings.map(b => (
                     <div key={b.id} style={{ padding: '1rem', background: '#f8fafc', borderRadius: '0.5rem', borderLeft: '4px solid #10b981' }}>
                       <p style={{ fontWeight: 'bold' }}>Tutor: {b.tutorName}</p>
-                      <p style={{ fontSize: '0.9rem', color: '#64748B' }}>{b.date} • {b.timeSlot}</p>
+                      <p style={{ fontSize: '0.9rem', color: '#64748B' }}>{b.date} • {b.startTime} - {b.endTime}</p>
                     </div>
                   ))}
                 </div>

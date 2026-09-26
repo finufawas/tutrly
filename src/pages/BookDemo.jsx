@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
-import { doc, getDoc, collection, addDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 
 function BookDemo() {
   const { tutorId } = useParams();
@@ -16,7 +16,8 @@ function BookDemo() {
   
   const [formData, setFormData] = useState({
     date: '',
-    timeSlot: 'Morning (9 AM - 12 PM)',
+    startTime: '',
+    endTime: '',
     message: ''
   });
 
@@ -55,13 +56,46 @@ function BookDemo() {
     setError('');
 
     try {
+      if (!formData.startTime || !formData.endTime) {
+        throw new Error("Please select both start and end times.");
+      }
+      
+      if (formData.startTime >= formData.endTime) {
+        throw new Error("End time must be after start time.");
+      }
+
+      // Check for overlapping bookings on the same date for this tutor
+      const q = query(
+        collection(db, 'bookings'), 
+        where('tutorId', '==', tutorId),
+        where('date', '==', formData.date)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      let hasOverlap = false;
+      
+      querySnapshot.forEach((doc) => {
+        const booking = doc.data();
+        if (booking.status !== 'cancelled') {
+          // Overlap condition: newStart < oldEnd AND newEnd > oldStart
+          if (formData.startTime < booking.endTime && formData.endTime > booking.startTime) {
+            hasOverlap = true;
+          }
+        }
+      });
+      
+      if (hasOverlap) {
+        throw new Error("The tutor is already booked during this time range. Please select another time.");
+      }
+
       await addDoc(collection(db, 'bookings'), {
         tutorId: tutorId,
         tutorName: tutor.name,
         parentId: currentUser.uid,
         parentName: userData?.name || 'Unknown Parent',
         date: formData.date,
-        timeSlot: formData.timeSlot,
+        startTime: formData.startTime,
+        endTime: formData.endTime,
         message: formData.message,
         status: 'pending',
         createdAt: new Date().toISOString()
@@ -102,17 +136,27 @@ function BookDemo() {
             />
           </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Preferred Time Slot</label>
-            <select 
-              value={formData.timeSlot}
-              onChange={(e) => setFormData({...formData, timeSlot: e.target.value})}
-              style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}
-            >
-              <option value="Morning (9 AM - 12 PM)">Morning (9 AM - 12 PM)</option>
-              <option value="Afternoon (1 PM - 4 PM)">Afternoon (1 PM - 4 PM)</option>
-              <option value="Evening (5 PM - 8 PM)">Evening (5 PM - 8 PM)</option>
-            </select>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Start Time</label>
+              <input 
+                type="time" 
+                required
+                value={formData.startTime}
+                onChange={(e) => setFormData({...formData, startTime: e.target.value})}
+                style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>End Time</label>
+              <input 
+                type="time" 
+                required
+                value={formData.endTime}
+                onChange={(e) => setFormData({...formData, endTime: e.target.value})}
+                style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}
+              />
+            </div>
           </div>
 
           <div>

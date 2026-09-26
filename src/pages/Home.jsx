@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import heroTutorImg from '../assets/images/hero_tutor.jpg';
 import tutor1Img from '../assets/images/tutor_1.jpg';
 import tutor2Img from '../assets/images/tutor_2.jpg';
 
 function Home() {
   const navigate = useNavigate();
+  const { userData } = useAuth();
   const [classLevel, setClassLevel] = useState('');
   const [subject, setSubject] = useState('');
+  const isTutor = userData?.role === 'tutor';
 
   const handleSearch = () => {
     navigate(`/search?class=${encodeURIComponent(classLevel)}&subject=${encodeURIComponent(subject)}`);
@@ -26,22 +29,21 @@ function Home() {
               <i className="ri-graduation-cap-line"></i>
               <select value={classLevel} onChange={(e) => setClassLevel(e.target.value)}>
                 <option value="">Select Class</option>
-                <option value="Class 1-5">Class 1-5</option>
-                <option value="Class 6-8">Class 6-8</option>
-                <option value="Class 9-10">Class 9-10</option>
+                {[...Array(12)].map((_, i) => (
+                  <option key={i+1} value={`Class ${i+1}`}>Class {i+1}</option>
+                ))}
               </select>
             </div>
             <div className="search-divider"></div>
             <div className="search-field">
               <i className="ri-book-2-line"></i>
-              <select value={subject} onChange={(e) => setSubject(e.target.value)}>
-                <option value="">Select Subject</option>
-                <option value="Mathematics">Mathematics</option>
-                <option value="Science">Science</option>
-                <option value="English">English</option>
-                <option value="Social Studies">Social Studies</option>
-                <option value="Hindi">Hindi</option>
-              </select>
+              <input 
+                type="text" 
+                placeholder="Subject (e.g. Math)" 
+                value={subject} 
+                onChange={(e) => setSubject(e.target.value)}
+                style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: '1rem', width: '100%' }}
+              />
             </div>
             <button className="btn-primary search-btn" onClick={handleSearch}><i className="ri-search-line"></i> Find Tutor</button>
           </div>
@@ -88,45 +90,49 @@ function Home() {
         </div>
       </section>
 
-      <section className="featured-tutors" id="find-tutor">
-        <div className="section-header">
-          <h2>Top Rated Tutors</h2>
-          <p>Learn from the best educators in your area</p>
-        </div>
-        <div className="tutors-grid">
-          <div className="tutor-card">
-            <div className="tutor-image"><img src={tutor1Img} alt="Mr. Sharma" /><span className="tutor-badge">Verified</span></div>
-            <div className="tutor-info">
-              <div className="tutor-header"><h3>Mr. Rahul Sharma</h3><div className="rating"><i className="ri-star-fill"></i> 4.9</div></div>
-              <p className="tutor-subject">Mathematics & Science</p>
-              <p className="tutor-classes">Classes 6 to 10</p>
-              <div className="tutor-footer"><span className="experience"><i className="ri-briefcase-4-line"></i> 5 Years Exp.</span><button className="btn-outline" onClick={() => navigate('/search')}>Find Similar</button></div>
+      {!isTutor && (
+        <>
+          <section className="featured-tutors" id="find-tutor">
+            <div className="section-header">
+              <h2>Top Rated Tutors</h2>
+              <p>Learn from the best educators in your area</p>
             </div>
-          </div>
-          <div className="tutor-card">
-            <div className="tutor-image"><img src={tutor2Img} alt="Ms. Verma" /><span className="tutor-badge">Verified</span></div>
-            <div className="tutor-info">
-              <div className="tutor-header"><h3>Ms. Priya Verma</h3><div className="rating"><i className="ri-star-fill"></i> 4.8</div></div>
-              <p className="tutor-subject">English & Social Studies</p>
-              <p className="tutor-classes">Classes 1 to 8</p>
-              <div className="tutor-footer"><span className="experience"><i className="ri-briefcase-4-line"></i> 3 Years Exp.</span><button className="btn-outline" onClick={() => navigate('/search')}>Find Similar</button></div>
+            <div className="tutors-grid">
+              <div className="tutor-card">
+                <div className="tutor-image"><img src={tutor1Img} alt="Mr. Sharma" /><span className="tutor-badge">Verified</span></div>
+                <div className="tutor-info">
+                  <div className="tutor-header"><h3>Mr. Rahul Sharma</h3><div className="rating"><i className="ri-star-fill"></i> 4.9</div></div>
+                  <p className="tutor-subject">Mathematics & Science</p>
+                  <p className="tutor-classes">Class 10</p>
+                  <div className="tutor-footer"><span className="experience"><i className="ri-briefcase-4-line"></i> 5 Years Exp.</span><button className="btn-outline" onClick={() => navigate('/search')}>Find Similar</button></div>
+                </div>
+              </div>
+              <div className="tutor-card">
+                <div className="tutor-image"><img src={tutor2Img} alt="Ms. Verma" /><span className="tutor-badge">Verified</span></div>
+                <div className="tutor-info">
+                  <div className="tutor-header"><h3>Ms. Priya Verma</h3><div className="rating"><i className="ri-star-fill"></i> 4.8</div></div>
+                  <p className="tutor-subject">English & Social Studies</p>
+                  <p className="tutor-classes">Class 8</p>
+                  <div className="tutor-footer"><span className="experience"><i className="ri-briefcase-4-line"></i> 3 Years Exp.</span><button className="btn-outline" onClick={() => navigate('/search')}>Find Similar</button></div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
 
-      <section className="cta-section" id="become-tutor">
-        <div className="cta-content">
-          <h2>Are you an expert educator?</h2>
-          <p>Join our platform, set your own schedule, and help students achieve their goals while earning.</p>
-          <button 
-            className="btn-primary btn-large" 
-            onClick={() => navigate('/login', { state: { isSignup: true, role: 'tutor' } })}
-          >
-            Register as a Tutor
-          </button>
-        </div>
-      </section>
+          <section className="cta-section" id="become-tutor">
+            <div className="cta-content">
+              <h2>Are you an expert educator?</h2>
+              <p>Join our platform, set your own schedule, and help students achieve their goals while earning.</p>
+              <button 
+                className="btn-primary btn-large" 
+                onClick={() => navigate('/login', { state: { isSignup: true, role: 'tutor' } })}
+              >
+                Register as a Tutor
+              </button>
+            </div>
+          </section>
+        </>
+      )}
     </>
   );
 }

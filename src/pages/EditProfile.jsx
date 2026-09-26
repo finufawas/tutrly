@@ -18,10 +18,10 @@ function EditProfile() {
     classLevels: [],
     photoURL: ''
   });
-  const [imageFile, setImageFile] = useState(null);
+  const [subjectInput, setSubjectInput] = useState('');
 
-  const availableSubjects = ['Mathematics', 'Science', 'English', 'Social Studies', 'Hindi'];
-  const availableClasses = ['Class 1-5', 'Class 6-8', 'Class 9-10'];
+  const availableClasses = [...Array(12)].map((_, i) => `Class ${i+1}`);
+  const availableBoards = ['State', 'CBSE', 'ICSE'];
 
   useEffect(() => {
     if (userData) {
@@ -31,6 +31,7 @@ function EditProfile() {
         hourlyRate: userData.hourlyRate || '',
         subjects: userData.subjects || [],
         classLevels: userData.classLevels || [],
+        boards: userData.boards || [],
         photoURL: userData.photoURL || ''
       });
     }
@@ -39,13 +40,25 @@ function EditProfile() {
   const handleCheckboxChange = (e, field) => {
     const { value, checked } = e.target;
     setFormData(prev => {
-      const currentList = prev[field];
+      const currentList = prev[field] || [];
       if (checked) {
         return { ...prev, [field]: [...currentList, value] };
       } else {
         return { ...prev, [field]: currentList.filter(item => item !== value) };
       }
     });
+  };
+
+  const handleAddSubject = (e) => {
+    e.preventDefault();
+    if (subjectInput.trim() && !formData.subjects.includes(subjectInput.trim())) {
+      setFormData(prev => ({ ...prev, subjects: [...prev.subjects, subjectInput.trim()] }));
+      setSubjectInput('');
+    }
+  };
+
+  const removeSubject = (sub) => {
+    setFormData(prev => ({ ...prev, subjects: prev.subjects.filter(s => s !== sub) }));
   };
 
   const handleImageChange = (e) => {
@@ -101,6 +114,7 @@ function EditProfile() {
         hourlyRate: Number(formData.hourlyRate),
         subjects: formData.subjects,
         classLevels: formData.classLevels,
+        boards: formData.boards,
         photoURL: formData.photoURL
       });
       // Force reload to get fresh data context or navigate to dashboard where it might trigger re-render
@@ -167,27 +181,49 @@ function EditProfile() {
           </div>
 
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Subjects Taught</label>
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-              {availableSubjects.map(sub => (
-                <label key={sub} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Boards</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '0.5rem' }}>
+              {availableBoards.map(board => (
+                <label key={board} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', cursor: 'pointer' }}>
                   <input 
                     type="checkbox" 
-                    value={sub}
-                    checked={formData.subjects.includes(sub)}
-                    onChange={(e) => handleCheckboxChange(e, 'subjects')}
+                    value={board}
+                    checked={formData.boards?.includes(board) || false}
+                    onChange={(e) => handleCheckboxChange(e, 'boards')}
                   />
-                  {sub}
+                  {board}
                 </label>
               ))}
             </div>
           </div>
 
           <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Subjects Taught</label>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+              {formData.subjects.map(sub => (
+                <span key={sub} style={{ background: '#e0e7ff', color: '#4338ca', padding: '0.25rem 0.75rem', borderRadius: '1rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  {sub} <i className="ri-close-line" style={{cursor: 'pointer'}} onClick={() => removeSubject(sub)}></i>
+                </span>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <input 
+                type="text" 
+                value={subjectInput}
+                onChange={(e) => setSubjectInput(e.target.value)}
+                placeholder="e.g. Mathematics"
+                style={{ flex: 1, padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSubject(e); } }}
+              />
+              <button type="button" onClick={handleAddSubject} className="btn-secondary">Add</button>
+            </div>
+          </div>
+
+          <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Class Levels</label>
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.5rem' }}>
               {availableClasses.map(cls => (
-                <label key={cls} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                <label key={cls} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', cursor: 'pointer' }}>
                   <input 
                     type="checkbox" 
                     value={cls}
