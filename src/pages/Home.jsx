@@ -10,12 +10,7 @@ function Home() {
   const [subject, setSubject] = useState('');
 
   const handleSearch = () => {
-    let message = 'Searching for tutors';
-    if (classLevel) message += ` for Class ${classLevel}`;
-    if (subject) message += ` teaching ${subject}`;
-    
-    document.querySelector('#find-tutor')?.scrollIntoView({ behavior: 'smooth' });
-    console.log(message);
+    navigate(`/search?class=${encodeURIComponent(classLevel)}&subject=${encodeURIComponent(subject)}`);
   };
 
   return (
@@ -31,9 +26,9 @@ function Home() {
               <i className="ri-graduation-cap-line"></i>
               <select value={classLevel} onChange={(e) => setClassLevel(e.target.value)}>
                 <option value="">Select Class</option>
-                {[1,2,3,4,5,6,7,8,9,10].map(c => (
-                  <option key={c} value={c}>Class {c}</option>
-                ))}
+                <option value="Class 1-5">Class 1-5</option>
+                <option value="Class 6-8">Class 6-8</option>
+                <option value="Class 9-10">Class 9-10</option>
               </select>
             </div>
             <div className="search-divider"></div>
@@ -41,11 +36,11 @@ function Home() {
               <i className="ri-book-2-line"></i>
               <select value={subject} onChange={(e) => setSubject(e.target.value)}>
                 <option value="">Select Subject</option>
-                <option value="math">Mathematics</option>
-                <option value="science">Science</option>
-                <option value="english">English</option>
-                <option value="sst">Social Studies</option>
-                <option value="hindi">Hindi</option>
+                <option value="Mathematics">Mathematics</option>
+                <option value="Science">Science</option>
+                <option value="English">English</option>
+                <option value="Social Studies">Social Studies</option>
+                <option value="Hindi">Hindi</option>
               </select>
             </div>
             <button className="btn-primary search-btn" onClick={handleSearch}><i className="ri-search-line"></i> Find Tutor</button>

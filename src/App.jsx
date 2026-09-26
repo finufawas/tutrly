@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import EditProfile from './pages/EditProfile';
+import Search from './pages/Search';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './App.css';
 
@@ -28,6 +29,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/search" element={<Search />} />
           <Route 
             path="/dashboard" 
             element={
