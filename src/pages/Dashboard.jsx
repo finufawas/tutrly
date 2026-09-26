@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { auth } from '../firebase';
+import { db, auth } from '../firebase';
 import { signOut } from 'firebase/auth';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useNavigate, Link } from 'react-router-dom';
 
 function Dashboard() {
@@ -18,6 +19,34 @@ function Dashboard() {
   };
 
   const isTutor = userData?.role === 'tutor';
+  const [bookings, setBookings] = useState([]);
+  const [loadingBookings, setLoadingBookings] = useState(true);
+
+  useEffect(() => {
+    const fetchBookings = async () => {
+      if (!currentUser || !userData) return;
+      
+      try {
+        const field = isTutor ? 'tutorId' : 'parentId';
+        const q = query(collection(db, 'bookings'), where(field, '==', currentUser.uid));
+        const querySnapshot = await getDocs(q);
+        
+        let results = [];
+        querySnapshot.forEach((doc) => {
+          results.push({ id: doc.id, ...doc.data() });
+        });
+        
+        // Sort by date (closest first)
+        results.sort((a, b) => new Date(a.date) - new Date(b.date));
+        setBookings(results);
+      } catch (error) {
+        console.error("Error fetching bookings:", error);
+      }
+      setLoadingBookings(false);
+    };
+
+    fetchBookings();
+  }, [currentUser, userData, isTutor]);
 
   return (
     <div style={{ padding: '8rem 5% 4rem', minHeight: 'calc(100vh - 100px)' }}>
@@ -37,8 +66,22 @@ function Dashboard() {
               <button className="btn-secondary" onClick={() => navigate('/edit-profile')}>Edit Profile</button>
             </div>
             <div style={{ padding: '1.5rem', border: '1px solid #E2E8F0', borderRadius: '0.5rem' }}>
-              <h3 style={{ marginBottom: '0.5rem' }}><i className="ri-calendar-check-line"></i> Upcoming Classes</h3>
-              <p>You have no classes scheduled for today.</p>
+              <h3 style={{ marginBottom: '1rem' }}><i className="ri-calendar-check-line"></i> Upcoming Classes</h3>
+              {loadingBookings ? (
+                <p>Loading classes...</p>
+              ) : bookings.length === 0 ? (
+                <p>You have no classes scheduled.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {bookings.map(b => (
+                    <div key={b.id} style={{ padding: '1rem', background: '#f8fafc', borderRadius: '0.5rem', borderLeft: '4px solid #3b82f6' }}>
+                      <p style={{ fontWeight: 'bold' }}>{b.parentName}</p>
+                      <p style={{ fontSize: '0.9rem', color: '#64748B' }}>{b.date} • {b.timeSlot}</p>
+                      {b.message && <p style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>"{b.message}"</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ) : (
@@ -49,8 +92,21 @@ function Dashboard() {
               <Link to="/#find-tutor" className="btn-secondary" style={{ display: 'inline-block' }}>Search Tutors</Link>
             </div>
             <div style={{ padding: '1.5rem', border: '1px solid #E2E8F0', borderRadius: '0.5rem' }}>
-              <h3 style={{ marginBottom: '0.5rem' }}><i className="ri-calendar-check-line"></i> Booked Demos</h3>
-              <p>You have not booked any demo classes yet.</p>
+              <h3 style={{ marginBottom: '1rem' }}><i className="ri-calendar-check-line"></i> Booked Demos</h3>
+              {loadingBookings ? (
+                <p>Loading bookings...</p>
+              ) : bookings.length === 0 ? (
+                <p>You have not booked any demo classes yet.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {bookings.map(b => (
+                    <div key={b.id} style={{ padding: '1rem', background: '#f8fafc', borderRadius: '0.5rem', borderLeft: '4px solid #10b981' }}>
+                      <p style={{ fontWeight: 'bold' }}>Tutor: {b.tutorName}</p>
+                      <p style={{ fontSize: '0.9rem', color: '#64748B' }}>{b.date} • {b.timeSlot}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}

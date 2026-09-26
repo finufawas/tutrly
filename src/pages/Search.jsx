@@ -113,7 +113,7 @@ function Search() {
                     <span className="experience" style={{ fontWeight: 'bold', color: '#0f172a' }}>
                       ₹{tutor.hourlyRate || 0} / hr
                     </span>
-                    <button className="btn-outline">Book Demo</button>
+                    <Link to={`/book/${tutor.id}`} className="btn-outline" style={{ display: 'inline-block', textAlign: 'center' }}>Book Demo</Link>
                   </div>
                 </div>
               </div>
