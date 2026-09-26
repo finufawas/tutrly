@@ -1,40 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db, auth } from '../firebase';
-import { signOut, deleteUser } from 'firebase/auth';
-import { collection, query, where, getDocs, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useNavigate, Link } from 'react-router-dom';
 
 function Dashboard() {
   const { currentUser, userData } = useAuth();
   const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      navigate('/');
-    } catch (error) {
-      console.error('Failed to log out', error);
-    }
-  };
-
-  const handleDeleteAccount = async () => {
-    if (window.confirm("Are you sure you want to delete your account? This cannot be undone.")) {
-      try {
-        // Delete Firestore document first
-        await deleteDoc(doc(db, 'users', currentUser.uid));
-        // Delete Auth user
-        await deleteUser(currentUser);
-        navigate('/');
-      } catch (error) {
-        if (error.code === 'auth/requires-recent-login') {
-          alert("Please log out and log back in to verify your identity before deleting your account.");
-        } else {
-          alert("Failed to delete account: " + error.message);
-        }
-      }
-    }
-  };
 
   const isTutor = userData?.role === 'tutor';
   const [bookings, setBookings] = useState([]);
@@ -77,12 +49,7 @@ function Dashboard() {
         </p>
         
         {isTutor ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem', marginBottom: '3rem' }}>
-            <div style={{ padding: '1.5rem', border: '1px solid #E2E8F0', borderRadius: '0.5rem' }}>
-              <h3 style={{ marginBottom: '0.5rem' }}><i className="ri-user-settings-line"></i> Profile Settings</h3>
-              <p style={{ marginBottom: '1rem' }}>Update your bio, subjects, and hourly rate so parents can find you.</p>
-              <button className="btn-secondary" onClick={() => navigate('/edit-profile')}>Edit Profile</button>
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', marginBottom: '3rem' }}>
             <div style={{ padding: '1.5rem', border: '1px solid #E2E8F0', borderRadius: '0.5rem' }}>
               <h3 style={{ marginBottom: '1rem' }}><i className="ri-calendar-check-line"></i> Upcoming Classes</h3>
               {loadingBookings ? (
@@ -103,7 +70,7 @@ function Dashboard() {
             </div>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem', marginBottom: '3rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', marginBottom: '3rem' }}>
             <div style={{ padding: '1.5rem', border: '1px solid #E2E8F0', borderRadius: '0.5rem' }}>
               <h3 style={{ marginBottom: '0.5rem' }}><i className="ri-search-eye-line"></i> Find a Tutor</h3>
               <p style={{ marginBottom: '1rem' }}>Search for expert educators matching your child's needs.</p>
@@ -129,14 +96,6 @@ function Dashboard() {
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-          <button onClick={handleLogout} className="btn-outline">
-            Sign Out
-          </button>
-          <button onClick={handleDeleteAccount} className="btn-outline" style={{ borderColor: 'red', color: 'red' }}>
-            Delete Account
-          </button>
-        </div>
       </div>
     </div>
   );

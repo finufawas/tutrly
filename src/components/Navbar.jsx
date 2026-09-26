@@ -40,7 +40,10 @@ function Navbar() {
         <Link to={isHomePage ? "/" : "/"} onClick={(e) => smoothScroll(e, '#find-tutor')}>Find Tutor</Link>
         
         {currentUser ? (
-          <Link to="/dashboard" className="btn-primary" onClick={() => setMobileMenuOpen(false)}>Dashboard</Link>
+          <>
+            <Link to="/profile" onClick={(e) => setMobileMenuOpen(false)}>My Profile</Link>
+            <Link to="/dashboard" className="btn-primary" onClick={() => setMobileMenuOpen(false)}>Dashboard</Link>
+          </>
         ) : (
           <>
             <Link to="/login" state={{ isSignup: true, role: 'tutor' }} className="btn-secondary" onClick={() => setMobileMenuOpen(false)}>Become a Tutor</Link>

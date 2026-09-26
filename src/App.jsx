@@ -5,6 +5,7 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import MyProfile from './pages/MyProfile';
 import EditProfile from './pages/EditProfile';
 import Search from './pages/Search';
 import BookDemo from './pages/BookDemo';
@@ -39,6 +40,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <MyProfile />
               </ProtectedRoute>
             } 
           />
