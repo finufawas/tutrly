@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const isHomePage = location.pathname === '/';
+  const { currentUser } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -36,8 +38,15 @@ function Navbar() {
         <Link to="/" onClick={(e) => smoothScroll(e, '#home')}>Home</Link>
         <Link to={isHomePage ? "/" : "/"} onClick={(e) => smoothScroll(e, '#how-it-works')}>How it Works</Link>
         <Link to={isHomePage ? "/" : "/"} onClick={(e) => smoothScroll(e, '#find-tutor')}>Find Tutor</Link>
-        <Link to={isHomePage ? "/" : "/"} className="btn-secondary" onClick={(e) => smoothScroll(e, '#become-tutor')}>Become a Tutor</Link>
-        <Link to="/login" className="btn-primary" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
+        
+        {currentUser ? (
+          <Link to="/dashboard" className="btn-primary" onClick={() => setMobileMenuOpen(false)}>Dashboard</Link>
+        ) : (
+          <>
+            <Link to={isHomePage ? "/" : "/"} className="btn-secondary" onClick={(e) => smoothScroll(e, '#become-tutor')}>Become a Tutor</Link>
+            <Link to="/login" className="btn-primary" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
+          </>
+        )}
       </div>
       <div className="mobile-menu-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
         <i className="ri-menu-line"></i>
