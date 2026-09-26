@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import tutorPlaceholder from '../assets/images/tutor_1.jpg'; 
@@ -7,6 +8,8 @@ import tutorPlaceholder from '../assets/images/tutor_1.jpg';
 function TutorProfile() {
   const { tutorId } = useParams();
   const navigate = useNavigate();
+  const { userData } = useAuth();
+  
   const [tutor, setTutor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -49,7 +52,15 @@ function TutorProfile() {
               <span>•</span>
               <span style={{ fontWeight: 'bold', color: '#0f172a' }}>₹{tutor.hourlyRate || 0} / hr</span>
             </div>
-            <Link to={`/book/${tutor.id}`} className="btn-primary" style={{ display: 'inline-block' }}>Book a Demo</Link>
+            
+            {userData?.role === 'tutor' ? (
+              <p style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                <i className="ri-error-warning-line"></i> Tutors cannot book demos with other tutors.
+              </p>
+            ) : (
+              <Link to={`/book/${tutor.id}`} className="btn-primary" style={{ display: 'inline-block' }}>Book a Demo</Link>
+            )}
+            
           </div>
         </div>
 

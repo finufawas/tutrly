@@ -46,6 +46,11 @@ function BookDemo() {
       return;
     }
     
+    if (userData?.role === 'tutor') {
+      alert("Tutor accounts cannot book demos.");
+      return;
+    }
+    
     setBooking(true);
     setError('');
 
