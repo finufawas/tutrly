@@ -41,6 +41,7 @@ function Login() {
           email: email,
           role: role,
           createdAt: new Date().toISOString(),
+          isVerified: role === 'parent', // Parents are verified by default, tutors need approval
           // Optional tutor fields that can be filled out later
           subjects: [],
           classLevels: [],

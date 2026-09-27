@@ -30,6 +30,8 @@ function Search() {
       });
 
       // Filter in memory since Firestore can't do multiple array-contains
+      results = results.filter(t => t.isVerified === true);
+
       if (classParam) {
         results = results.filter(t => t.classLevels && t.classLevels.includes(classParam));
       }

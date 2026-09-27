@@ -196,6 +196,14 @@ function Dashboard() {
   return (
     <div style={{ padding: '8rem 5% 4rem', minHeight: 'calc(100vh - 100px)' }}>
       <div style={{ background: 'white', padding: '3rem', borderRadius: '1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+        
+        {isTutor && userData && !userData.isVerified && (
+          <div style={{ background: '#fef9c3', borderLeft: '4px solid #eab308', padding: '1rem', marginBottom: '2rem', borderRadius: '0.25rem' }}>
+            <h4 style={{ color: '#854d0e', marginBottom: '0.25rem' }}><i className="ri-error-warning-fill"></i> Account Pending Verification</h4>
+            <p style={{ color: '#713f12', fontSize: '0.9rem' }}>Your profile is currently under review by our team. Parents will not be able to find or book you until your account is verified.</p>
+          </div>
+        )}
+
         <h2 style={{ fontSize: '2rem', marginBottom: '1rem' }}>
           {isTutor ? 'Tutor Dashboard' : 'Parent Dashboard'}
         </h2>

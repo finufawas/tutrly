@@ -7,7 +7,7 @@ function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const isHomePage = location.pathname === '/';
-  const { currentUser } = useAuth();
+  const { currentUser, userData } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -41,6 +41,9 @@ function Navbar() {
         
         {currentUser ? (
           <>
+            {userData?.role === 'admin' && (
+              <Link to="/admin" onClick={(e) => setMobileMenuOpen(false)} style={{ color: '#ef4444', fontWeight: 'bold' }}>Admin Panel</Link>
+            )}
             <Link to="/profile" onClick={(e) => setMobileMenuOpen(false)}>My Profile</Link>
             <Link to="/dashboard" className="btn-primary" onClick={() => setMobileMenuOpen(false)}>Dashboard</Link>
           </>

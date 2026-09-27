@@ -10,6 +10,7 @@ import EditProfile from './pages/EditProfile';
 import Search from './pages/Search';
 import BookDemo from './pages/BookDemo';
 import TutorProfile from './pages/TutorProfile';
+import AdminDashboard from './pages/AdminDashboard';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './App.css';
 
@@ -56,6 +57,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <EditProfile />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin" 
+            element={
+              <ProtectedRoute>
+                <AdminDashboard />
               </ProtectedRoute>
             } 
           />
