@@ -133,18 +133,6 @@ function Home() {
         <div className="hero-bento">
           <div className="hero-photo">
             <img className="cover" src={heroTutorImg} alt="Home tutoring" />
-            {top ? (
-              <div className="hero-photo-card" onClick={() => navigate(isGuest ? '/login' : `/tutor/${top.id}`)}>
-                <Avatar user={top} size={44} radius={14} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontWeight: 800, color: 'var(--ink)' }}>{top.name}</p>
-                  <p style={{ fontSize: '0.75rem', fontWeight: 600 }}>{top.subjects?.[0]} · {classRange(top.classLevels)}</p>
-                </div>
-                {!isGuest && <span style={{ fontWeight: 800 }}>₹{top.hourlyRate || 0}</span>}
-              </div>
-            ) : (
-              <div className="hero-photo-card"><p style={{ fontWeight: 700, color: 'var(--ink)' }}>Personalised 1-on-1 home tuition</p></div>
-            )}
           </div>
           <div className="stat-tile tile-mint">
             <span className="icon"><i className="ri-shield-check-fill"></i></span>
