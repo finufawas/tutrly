@@ -111,7 +111,7 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
 body { background: var(--bg); color: var(--ink); line-height: 1.55; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
-body.has-bottom-nav { padding-bottom: 104px; }
+body.has-bottom-nav { padding-bottom: 96px; }
 h1 { font-size: clamp(2.2rem, 5vw, 4.5rem); font-weight: 800; line-height: 0.98; letter-spacing: -0.05em; }
 h2 { font-size: clamp(1.6rem, 3vw, 2.4rem); font-weight: 800; line-height: 1.05; letter-spacing: -0.04em; }
 h3 { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.02em; }
@@ -241,11 +241,11 @@ input, select, textarea { font: inherit; color: var(--ink); }
     .bottom-nav {
         display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; align-items: center;
         position: fixed; left: 16px; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 1000;
-        height: 70px; padding: 0 8px; border-radius: 26px; background: var(--nav-bar); box-shadow: var(--shadow-float);
+        height: 64px; padding: 0 6px; border-radius: 20px; background: var(--nav-bar); box-shadow: var(--shadow-float);
     }
     [data-theme='dark'] .bottom-nav { border: 1px solid var(--line); }
-    .bottom-nav a { height: 54px; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-size: 0.68rem; font-weight: 700; color: var(--nav-muted); }
-    .bottom-nav a i { font-size: 1.3rem; }
+    .bottom-nav a { height: 50px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-size: 0.65rem; font-weight: 700; color: var(--nav-muted); }
+    .bottom-nav a i { font-size: 1.2rem; }
     .bottom-nav a.active { background: var(--nav-active-bg); color: var(--nav-active-fg); font-weight: 800; }
 }
 
@@ -523,7 +523,8 @@ footer { background: var(--surface); margin: 0 16px 16px; border-radius: 36px; p
     .footer-content { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 768px) {
-    :root { --nav-h: 64px; }
+    html { font-size: 13px; } /* Scales down everything using rem on mobile */
+    :root { --nav-h: 56px; }
     .navbar { top: 10px; }
     .nav-pill { width: 100%; justify-content: space-between; padding: 6px 6px 6px 14px; }
     .nav-links { display: none; position: absolute; top: calc(100% + 8px); left: 4%; right: 4%; flex-direction: column; align-items: stretch; background: var(--surface); padding: 10px; border-radius: 28px; box-shadow: var(--shadow-card); pointer-events: auto; }
