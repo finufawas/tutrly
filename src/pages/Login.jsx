@@ -11,6 +11,7 @@ function Login() {
   const [role, setRole] = useState(location.state?.role || 'parent');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -25,6 +26,13 @@ function Login() {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
+        if (password.length < 8) {
+          throw new Error("Password must be at least 8 characters long.");
+        }
+        if (password !== confirmPassword) {
+          throw new Error("Passwords do not match.");
+        }
+        
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         
         // Save user profile to Firestore
@@ -73,8 +81,15 @@ function Login() {
           
           <div className="form-group">
             <label>Password</label>
-            <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required minLength="6" />
+            <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={isLogin ? "6" : "8"} />
           </div>
+
+          {!isLogin && (
+            <div className="form-group">
+              <label>Confirm Password</label>
+              <input type="password" placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength="8" />
+            </div>
+          )}
 
           {!isLogin && (
             <div className="form-group">

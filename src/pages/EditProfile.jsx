@@ -16,9 +16,15 @@ function EditProfile() {
     hourlyRate: '',
     subjects: [],
     classLevels: [],
-    photoURL: ''
+    photoURL: '',
+    availability: {
+      Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: []
+    }
   });
   const [subjectInput, setSubjectInput] = useState('');
+  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  
+  const [newSlot, setNewSlot] = useState({ day: 'Monday', start: '', end: '' });
 
   const availableClasses = [...Array(12)].map((_, i) => `Class ${i+1}`);
   const availableBoards = ['State', 'CBSE', 'ICSE'];
@@ -32,7 +38,10 @@ function EditProfile() {
         subjects: userData.subjects || [],
         classLevels: userData.classLevels || [],
         boards: userData.boards || [],
-        photoURL: userData.photoURL || ''
+        photoURL: userData.photoURL || '',
+        availability: userData.availability || {
+          Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: []
+        }
       });
     }
   }, [userData]);
@@ -59,6 +68,37 @@ function EditProfile() {
 
   const removeSubject = (sub) => {
     setFormData(prev => ({ ...prev, subjects: prev.subjects.filter(s => s !== sub) }));
+  };
+
+  const handleAddSlot = () => {
+    if (!newSlot.start || !newSlot.end) {
+      alert("Please select both start and end times.");
+      return;
+    }
+    if (newSlot.start >= newSlot.end) {
+      alert("End time must be after start time.");
+      return;
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      availability: {
+        ...prev.availability,
+        [newSlot.day]: [...(prev.availability[newSlot.day] || []), { start: newSlot.start, end: newSlot.end }]
+      }
+    }));
+    setNewSlot({ ...newSlot, start: '', end: '' });
+  };
+
+  const handleRemoveSlot = (day, index) => {
+    setFormData(prev => {
+      const newDaySlots = [...prev.availability[day]];
+      newDaySlots.splice(index, 1);
+      return {
+        ...prev,
+        availability: { ...prev.availability, [day]: newDaySlots }
+      };
+    });
   };
 
   const handleImageChange = (e) => {
@@ -115,7 +155,8 @@ function EditProfile() {
         subjects: formData.subjects,
         classLevels: formData.classLevels,
         boards: formData.boards,
-        photoURL: formData.photoURL
+        photoURL: formData.photoURL,
+        availability: formData.availability
       });
       // Force reload to get fresh data context or navigate to dashboard where it might trigger re-render
       // We removed window.location.reload() to prevent 404s on GitHub Pages.
@@ -233,6 +274,49 @@ function EditProfile() {
                   {cls}
                 </label>
               ))}
+            </div>
+          </div>
+
+          <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1.5rem', marginTop: '1rem' }}>
+            <label style={{ display: 'block', marginBottom: '1rem', fontWeight: 'bold', fontSize: '1.2rem' }}>Availability Schedule</label>
+            <p style={{ color: '#64748B', marginBottom: '1rem', fontSize: '0.9rem' }}>Add the time slots you are available to take classes each day. Parents will pick from these slots.</p>
+            
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div style={{ flex: '1', minWidth: '120px' }}>
+                <label style={{ fontSize: '0.8rem', color: '#64748B', display: 'block', marginBottom: '0.2rem' }}>Day</label>
+                <select value={newSlot.day} onChange={(e) => setNewSlot({...newSlot, day: e.target.value})} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #cbd5e1' }}>
+                  {daysOfWeek.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+              <div style={{ flex: '1', minWidth: '120px' }}>
+                <label style={{ fontSize: '0.8rem', color: '#64748B', display: 'block', marginBottom: '0.2rem' }}>Start Time</label>
+                <input type="time" value={newSlot.start} onChange={(e) => setNewSlot({...newSlot, start: e.target.value})} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #cbd5e1' }} />
+              </div>
+              <div style={{ flex: '1', minWidth: '120px' }}>
+                <label style={{ fontSize: '0.8rem', color: '#64748B', display: 'block', marginBottom: '0.2rem' }}>End Time</label>
+                <input type="time" value={newSlot.end} onChange={(e) => setNewSlot({...newSlot, end: e.target.value})} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #cbd5e1' }} />
+              </div>
+              <button type="button" onClick={handleAddSlot} className="btn-secondary" style={{ padding: '0.5rem 1rem' }}>Add Slot</button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {daysOfWeek.map(day => {
+                const slots = formData.availability[day] || [];
+                if (slots.length === 0) return null;
+                return (
+                  <div key={day} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.5rem' }}>
+                    <div style={{ width: '100px', fontWeight: 'bold', color: '#334155' }}>{day}</div>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', flex: 1 }}>
+                      {slots.map((slot, idx) => (
+                        <span key={idx} style={{ background: '#f0fdf4', color: '#166534', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid #bbf7d0' }}>
+                          {slot.start} - {slot.end}
+                          <i className="ri-close-circle-fill" style={{cursor: 'pointer', color: '#dc2626'}} onClick={() => handleRemoveSlot(day, idx)}></i>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 

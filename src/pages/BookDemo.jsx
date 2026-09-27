@@ -136,28 +136,52 @@ function BookDemo() {
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Start Time</label>
-              <input 
-                type="time" 
-                required
-                value={formData.startTime}
-                onChange={(e) => setFormData({...formData, startTime: e.target.value})}
-                style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}
-              />
-            </div>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>End Time</label>
-              <input 
-                type="time" 
-                required
-                value={formData.endTime}
-                onChange={(e) => setFormData({...formData, endTime: e.target.value})}
-                style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}
-              />
-            </div>
-          </div>
+          {formData.date && (() => {
+            const dateObj = new Date(formData.date);
+            // new Date("YYYY-MM-DD") in JS parses as UTC if no time is given.
+            // Using getUTCDay or just letting it adjust.
+            // A safer way is to split:
+            const [y, m, d] = formData.date.split('-');
+            const localDate = new Date(y, m - 1, d);
+            const dayOfWeek = localDate.toLocaleDateString('en-US', { weekday: 'long' });
+            const availableSlots = tutor.availability?.[dayOfWeek] || [];
+
+            if (availableSlots.length === 0) {
+              return (
+                <div style={{ padding: '1rem', background: '#fee2e2', borderRadius: '0.5rem', color: '#991b1b' }}>
+                  The tutor has not set any availability for {dayOfWeek}. Please select another date.
+                </div>
+              );
+            }
+
+            return (
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Available Slots for {dayOfWeek}</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.5rem' }}>
+                  {availableSlots.map((slot, idx) => {
+                    const isSelected = formData.startTime === slot.start && formData.endTime === slot.end;
+                    return (
+                      <div 
+                        key={idx}
+                        onClick={() => setFormData({...formData, startTime: slot.start, endTime: slot.end})}
+                        style={{ 
+                          padding: '0.75rem', 
+                          textAlign: 'center',
+                          borderRadius: '0.5rem', 
+                          border: isSelected ? '2px solid #3b82f6' : '1px solid #cbd5e1',
+                          background: isSelected ? '#eff6ff' : 'white',
+                          cursor: 'pointer',
+                          fontWeight: isSelected ? 'bold' : 'normal'
+                        }}
+                      >
+                        {slot.start} - {slot.end}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Message to Tutor (Optional)</label>

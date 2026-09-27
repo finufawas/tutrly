@@ -14,6 +14,9 @@ function Dashboard() {
   
   const [cancelBookingId, setCancelBookingId] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
+  const [rateBookingId, setRateBookingId] = useState(null);
+  const [rating, setRating] = useState(5);
+  const [review, setReview] = useState('');
 
   const fetchBookings = async () => {
     if (!currentUser || !userData) return;
@@ -74,6 +77,23 @@ function Dashboard() {
     }
   };
 
+  const handleRateSubmit = async (bookingId) => {
+    try {
+      const bookingRef = doc(db, 'bookings', bookingId);
+      await updateDoc(bookingRef, { 
+        rating: rating,
+        review: review.trim()
+      });
+      setRateBookingId(null);
+      setRating(5);
+      setReview('');
+      fetchBookings();
+    } catch (err) {
+      console.error("Error rating booking:", err);
+      alert("Failed to submit rating.");
+    }
+  };
+
   const getStatusColor = (status) => {
     if (status === 'confirmed') return '#10b981';
     if (status === 'cancelled') return '#ef4444';
@@ -82,6 +102,7 @@ function Dashboard() {
 
   const renderBookingCard = (b, title) => {
     const isCancelling = cancelBookingId === b.id;
+    const isRating = rateBookingId === b.id;
     const words = cancelReason.trim().split(/\s+/).filter(w => w.length > 0);
     const isValidCancel = words.length >= 10;
 
@@ -98,6 +119,16 @@ function Dashboard() {
             {b.status === 'cancelled' && b.cancelReason && (
               <p style={{ fontSize: '0.9rem', marginTop: '0.5rem', color: '#ef4444' }}>Reason: {b.cancelReason}</p>
             )}
+            {b.rating && (
+              <div style={{ marginTop: '0.5rem' }}>
+                <div style={{ color: '#f59e0b', fontSize: '1.2rem' }}>
+                  {[...Array(5)].map((_, i) => (
+                    <i key={i} className={i < b.rating ? "ri-star-fill" : "ri-star-line"}></i>
+                  ))}
+                </div>
+                {b.review && <p style={{ fontSize: '0.9rem', color: '#475569', marginTop: '0.25rem' }}>"{b.review}"</p>}
+              </div>
+            )}
           </div>
           
           <div style={{ display: 'flex', gap: '0.5rem', flexDirection: 'column' }}>
@@ -105,8 +136,12 @@ function Dashboard() {
               <button onClick={() => handleAccept(b.id)} className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}>Accept</button>
             )}
             
-            {(b.status === 'pending' || b.status === 'confirmed') && !isCancelling && (
+            {(b.status === 'pending' || b.status === 'confirmed') && !isCancelling && !isRating && (
               <button onClick={() => setCancelBookingId(b.id)} className="btn-outline" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', color: '#ef4444', borderColor: '#ef4444' }}>Cancel</button>
+            )}
+
+            {!isTutor && b.status === 'confirmed' && !b.rating && !isCancelling && !isRating && (
+              <button onClick={() => setRateBookingId(b.id)} className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', background: '#f59e0b', borderColor: '#f59e0b' }}>Rate Tutor</button>
             )}
           </div>
         </div>
@@ -124,6 +159,33 @@ function Dashboard() {
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <button onClick={() => handleCancelSubmit(b.id)} disabled={!isValidCancel} style={{ padding: '0.25rem 0.75rem', background: isValidCancel ? '#ef4444' : '#fca5a5', color: 'white', border: 'none', borderRadius: '0.25rem', cursor: isValidCancel ? 'pointer' : 'not-allowed' }}>Confirm Cancel</button>
               <button onClick={() => { setCancelBookingId(null); setCancelReason(''); }} style={{ padding: '0.25rem 0.75rem', background: 'transparent', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '0.25rem', cursor: 'pointer' }}>Back</button>
+            </div>
+          </div>
+        )}
+
+        {isRating && (
+          <div style={{ marginTop: '1rem', padding: '1rem', background: '#fef3c7', borderRadius: '0.5rem' }}>
+            <p style={{ fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#b45309' }}>Rate your experience with this tutor:</p>
+            <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '0.5rem', fontSize: '1.5rem', color: '#f59e0b' }}>
+              {[1, 2, 3, 4, 5].map(star => (
+                <i 
+                  key={star} 
+                  className={star <= rating ? "ri-star-fill" : "ri-star-line"} 
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => setRating(star)}
+                ></i>
+              ))}
+            </div>
+            <textarea 
+              value={review}
+              onChange={(e) => setReview(e.target.value)}
+              placeholder="Leave a short review (optional)"
+              rows="2" 
+              style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #fcd34d', marginBottom: '0.5rem' }}
+            ></textarea>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button onClick={() => handleRateSubmit(b.id)} style={{ padding: '0.25rem 0.75rem', background: '#f59e0b', color: 'white', border: 'none', borderRadius: '0.25rem', cursor: 'pointer' }}>Submit Rating</button>
+              <button onClick={() => { setRateBookingId(null); setRating(5); setReview(''); }} style={{ padding: '0.25rem 0.75rem', background: 'transparent', border: '1px solid #f59e0b', color: '#f59e0b', borderRadius: '0.25rem', cursor: 'pointer' }}>Back</button>
             </div>
           </div>
         )}
