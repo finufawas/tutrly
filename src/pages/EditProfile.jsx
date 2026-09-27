@@ -170,7 +170,7 @@ function EditProfile() {
 
   return (
     <div style={{ padding: '8rem 5% 4rem', minHeight: 'calc(100vh - 100px)' }}>
-      <div style={{ background: 'white', padding: '3rem', borderRadius: '1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', maxWidth: '800px', margin: '0 auto' }}>
+      <div style={{ background: 'var(--white)', padding: '3rem', borderRadius: '1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', maxWidth: '800px', margin: '0 auto' }}>
         <h2 style={{ fontSize: '2rem', marginBottom: '2rem' }}>{userData?.role === 'tutor' ? 'Edit Tutor Profile' : 'Edit Profile'}</h2>
         
         {error && <div style={{ color: 'red', marginBottom: '1rem', padding: '1rem', background: '#fee2e2', borderRadius: '0.5rem' }}>{error}</div>}
@@ -183,7 +183,7 @@ function EditProfile() {
               type="file" 
               accept="image/*"
               onChange={handleImageChange}
-              style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}
+              style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)' }}
             />
           </div>
 
@@ -194,7 +194,7 @@ function EditProfile() {
               value={formData.name}
               onChange={(e) => setFormData({...formData, name: e.target.value})}
               required
-              style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}
+              style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)' }}
             />
           </div>
 
@@ -208,7 +208,7 @@ function EditProfile() {
                   onChange={(e) => setFormData({...formData, hourlyRate: e.target.value})}
                   required
                   min="0"
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)' }}
                 />
               </div>
 
@@ -219,7 +219,7 @@ function EditProfile() {
                   onChange={(e) => setFormData({...formData, bio: e.target.value})}
                   rows="4"
                   placeholder="Tell parents about your experience and teaching style..."
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)' }}
                 ></textarea>
               </div>
 
@@ -227,7 +227,7 @@ function EditProfile() {
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Boards</label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '0.5rem' }}>
                   {availableBoards.map(board => (
-                    <label key={board} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', cursor: 'pointer' }}>
+                    <label key={board} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--background)', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', cursor: 'pointer' }}>
                       <input 
                         type="checkbox" 
                         value={board}
@@ -244,7 +244,7 @@ function EditProfile() {
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Subjects Taught</label>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
                   {formData.subjects.map(sub => (
-                    <span key={sub} style={{ background: '#e0e7ff', color: '#4338ca', padding: '0.25rem 0.75rem', borderRadius: '1rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <span key={sub} style={{ background: 'var(--primary-light)', color: 'var(--primary-dark)', padding: '0.25rem 0.75rem', borderRadius: '1rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                       {sub} <i className="ri-close-line" style={{cursor: 'pointer'}} onClick={() => removeSubject(sub)}></i>
                     </span>
                   ))}
@@ -255,7 +255,7 @@ function EditProfile() {
                     value={subjectInput}
                     onChange={(e) => setSubjectInput(e.target.value)}
                     placeholder="e.g. Mathematics"
-                    style={{ flex: 1, padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}
+                    style={{ flex: 1, padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)' }}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSubject(e); } }}
                   />
                   <button type="button" onClick={handleAddSubject} className="btn-secondary">Add</button>
@@ -266,7 +266,7 @@ function EditProfile() {
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Class Levels</label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.5rem' }}>
                   {availableClasses.map(cls => (
-                    <label key={cls} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', cursor: 'pointer' }}>
+                    <label key={cls} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--background)', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', cursor: 'pointer' }}>
                       <input 
                         type="checkbox" 
                         value={cls}
@@ -279,24 +279,24 @@ function EditProfile() {
                 </div>
               </div>
 
-              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1.5rem', marginTop: '1rem' }}>
+              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem', marginTop: '1rem' }}>
                 <label style={{ display: 'block', marginBottom: '1rem', fontWeight: 'bold', fontSize: '1.2rem' }}>Availability Schedule</label>
-                <p style={{ color: '#64748B', marginBottom: '1rem', fontSize: '0.9rem' }}>Add the time slots you are available to take classes each day. Parents will pick from these slots.</p>
+                <p style={{ color: 'var(--text-light)', marginBottom: '1rem', fontSize: '0.9rem' }}>Add the time slots you are available to take classes each day. Parents will pick from these slots.</p>
                 
                 <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
                   <div style={{ flex: '1', minWidth: '120px' }}>
-                    <label style={{ fontSize: '0.8rem', color: '#64748B', display: 'block', marginBottom: '0.2rem' }}>Day</label>
-                    <select value={newSlot.day} onChange={(e) => setNewSlot({...newSlot, day: e.target.value})} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #cbd5e1' }}>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-light)', display: 'block', marginBottom: '0.2rem' }}>Day</label>
+                    <select value={newSlot.day} onChange={(e) => setNewSlot({...newSlot, day: e.target.value})} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid var(--border-color)' }}>
                       {daysOfWeek.map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                   </div>
                   <div style={{ flex: '1', minWidth: '120px' }}>
-                    <label style={{ fontSize: '0.8rem', color: '#64748B', display: 'block', marginBottom: '0.2rem' }}>Start Time</label>
-                    <input type="time" value={newSlot.start} onChange={(e) => setNewSlot({...newSlot, start: e.target.value})} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #cbd5e1' }} />
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-light)', display: 'block', marginBottom: '0.2rem' }}>Start Time</label>
+                    <input type="time" value={newSlot.start} onChange={(e) => setNewSlot({...newSlot, start: e.target.value})} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid var(--border-color)' }} />
                   </div>
                   <div style={{ flex: '1', minWidth: '120px' }}>
-                    <label style={{ fontSize: '0.8rem', color: '#64748B', display: 'block', marginBottom: '0.2rem' }}>End Time</label>
-                    <input type="time" value={newSlot.end} onChange={(e) => setNewSlot({...newSlot, end: e.target.value})} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #cbd5e1' }} />
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-light)', display: 'block', marginBottom: '0.2rem' }}>End Time</label>
+                    <input type="time" value={newSlot.end} onChange={(e) => setNewSlot({...newSlot, end: e.target.value})} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid var(--border-color)' }} />
                   </div>
                   <button type="button" onClick={handleAddSlot} className="btn-secondary" style={{ padding: '0.5rem 1rem' }}>Add Slot</button>
                 </div>
@@ -306,8 +306,8 @@ function EditProfile() {
                     const slots = formData.availability[day] || [];
                     if (slots.length === 0) return null;
                     return (
-                      <div key={day} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.5rem' }}>
-                        <div style={{ width: '100px', fontWeight: 'bold', color: '#334155' }}>{day}</div>
+                      <div key={day} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+                        <div style={{ width: '100px', fontWeight: 'bold', color: 'var(--text-dark)' }}>{day}</div>
                         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', flex: 1 }}>
                           {slots.map((slot, idx) => (
                             <span key={idx} style={{ background: '#f0fdf4', color: '#166534', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid #bbf7d0' }}>

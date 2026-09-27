@@ -68,17 +68,17 @@ function Search() {
   };
 
   return (
-    <div style={{ padding: '8rem 5% 4rem', minHeight: 'calc(100vh - 100px)', background: '#f8fafc' }}>
+    <div style={{ padding: '8rem 5% 4rem', minHeight: 'calc(100vh - 100px)', background: 'var(--background)' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         
         {/* Search Header */}
-        <div style={{ background: 'white', padding: '2rem', borderRadius: '1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '2rem' }}>
+        <div style={{ background: 'var(--white)', padding: '2rem', borderRadius: '1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '2rem' }}>
           <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Find Your Perfect Tutor</h2>
           <form onSubmit={handleSearch} style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             <select 
               value={classLevel} 
               onChange={(e) => setClassLevel(e.target.value)}
-              style={{ flex: '1', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', minWidth: '150px' }}
+              style={{ flex: '1', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', minWidth: '150px' }}
             >
               <option value="">All Classes</option>
               {[...Array(12)].map((_, i) => (
@@ -89,7 +89,7 @@ function Search() {
             <select 
               value={board} 
               onChange={(e) => setBoard(e.target.value)}
-              style={{ flex: '1', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', minWidth: '150px' }}
+              style={{ flex: '1', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', minWidth: '150px' }}
             >
               <option value="">All Boards</option>
               <option value="State">State Board</option>
@@ -102,7 +102,7 @@ function Search() {
               placeholder="Subject (e.g. Math)"
               value={subject} 
               onChange={(e) => setSubject(e.target.value)}
-              style={{ flex: '1', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', minWidth: '150px' }}
+              style={{ flex: '1', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', minWidth: '150px' }}
             />
             
             <button type="submit" className="btn-primary" style={{ padding: '0.75rem 2rem' }}>Search</button>
@@ -111,7 +111,7 @@ function Search() {
 
         {/* Results */}
         <div>
-          <h3 style={{ marginBottom: '1.5rem', color: '#334155' }}>
+          <h3 style={{ marginBottom: '1.5rem', color: 'var(--text-dark)' }}>
             {loading ? 'Searching...' : `Found ${tutors.length} tutor${tutors.length !== 1 ? 's' : ''}`}
           </h3>
 
@@ -129,15 +129,15 @@ function Search() {
                   <p className="tutor-subject">{tutor.subjects?.join(', ') || 'No subjects listed'}</p>
                   <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
                     {tutor.boards?.map(b => (
-                      <span key={b} style={{ background: '#f1f5f9', color: '#475569', padding: '0.1rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.75rem' }}>{b}</span>
+                      <span key={b} style={{ background: 'var(--hover-bg)', color: 'var(--text-light)', padding: '0.1rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.75rem' }}>{b}</span>
                     ))}
                   </div>
                   <p className="tutor-classes">{tutor.classLevels?.join(', ') || 'No classes listed'}</p>
-                  <p style={{ marginTop: '0.5rem', color: '#64748B', fontSize: '0.9rem', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  <p style={{ marginTop: '0.5rem', color: 'var(--text-light)', fontSize: '0.9rem', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                     {tutor.bio || 'This tutor has not added a bio yet.'}
                   </p>
                   <div className="tutor-footer" style={{ marginTop: '1rem' }}>
-                    <span className="experience" style={{ fontWeight: 'bold', color: '#0f172a' }}>
+                    <span className="experience" style={{ fontWeight: 'bold', color: 'var(--text-dark)' }}>
                       ₹{tutor.hourlyRate || 0} / hr
                     </span>
                     <Link to={`/tutor/${tutor.id}`} className="btn-outline" style={{ display: 'inline-block', textAlign: 'center' }}>View Profile</Link>
@@ -148,10 +148,10 @@ function Search() {
           </div>
 
           {!loading && tutors.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '4rem', background: 'white', borderRadius: '1rem' }}>
+            <div style={{ textAlign: 'center', padding: '4rem', background: 'var(--white)', borderRadius: '1rem' }}>
               <i className="ri-search-line" style={{ fontSize: '3rem', color: '#cbd5e1' }}></i>
-              <h3 style={{ marginTop: '1rem', color: '#475569' }}>No tutors found</h3>
-              <p style={{ color: '#64748B', marginTop: '0.5rem' }}>Try adjusting your search filters to find more tutors.</p>
+              <h3 style={{ marginTop: '1rem', color: 'var(--text-light)' }}>No tutors found</h3>
+              <p style={{ color: 'var(--text-light)', marginTop: '0.5rem' }}>Try adjusting your search filters to find more tutors.</p>
             </div>
           )}
         </div>

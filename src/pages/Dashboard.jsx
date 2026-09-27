@@ -107,11 +107,11 @@ function Dashboard() {
     const isValidCancel = words.length >= 10;
 
     return (
-      <div key={b.id} style={{ padding: '1rem', background: '#f8fafc', borderRadius: '0.5rem', borderLeft: `4px solid ${getStatusColor(b.status)}`, marginBottom: '1rem' }}>
+      <div key={b.id} style={{ padding: '1rem', background: 'var(--background)', borderRadius: '0.5rem', borderLeft: `4px solid ${getStatusColor(b.status)}`, marginBottom: '1rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <p style={{ fontWeight: 'bold' }}>{title}</p>
-            <p style={{ fontSize: '0.9rem', color: '#64748B' }}>{b.date} • {b.startTime} - {b.endTime}</p>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-light)' }}>{b.date} • {b.startTime} - {b.endTime}</p>
             <p style={{ fontSize: '0.9rem', marginTop: '0.5rem', fontWeight: 'bold', color: getStatusColor(b.status) }}>
               Status: {b.status.charAt(0).toUpperCase() + b.status.slice(1)}
             </p>
@@ -126,7 +126,7 @@ function Dashboard() {
                     <i key={i} className={i < b.rating ? "ri-star-fill" : "ri-star-line"}></i>
                   ))}
                 </div>
-                {b.review && <p style={{ fontSize: '0.9rem', color: '#475569', marginTop: '0.25rem' }}>"{b.review}"</p>}
+                {b.review && <p style={{ fontSize: '0.9rem', color: 'var(--text-light)', marginTop: '0.25rem' }}>"{b.review}"</p>}
               </div>
             )}
           </div>
@@ -195,7 +195,7 @@ function Dashboard() {
 
   return (
     <div style={{ padding: '8rem 5% 4rem', minHeight: 'calc(100vh - 100px)' }}>
-      <div style={{ background: 'white', padding: '3rem', borderRadius: '1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+      <div style={{ background: 'var(--white)', padding: '3rem', borderRadius: '1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
         
         {isTutor && userData && !userData.isVerified && (
           <div style={{ background: '#fef9c3', borderLeft: '4px solid #eab308', padding: '1rem', marginBottom: '2rem', borderRadius: '0.25rem' }}>
@@ -207,7 +207,7 @@ function Dashboard() {
         <h2 style={{ fontSize: '2rem', marginBottom: '1rem' }}>
           {isTutor ? 'Tutor Dashboard' : 'Parent Dashboard'}
         </h2>
-        <p style={{ marginBottom: '2rem', color: '#64748B' }}>
+        <p style={{ marginBottom: '2rem', color: 'var(--text-light)' }}>
           Welcome back, <strong>{userData?.name || currentUser?.email}</strong>!
         </p>
         

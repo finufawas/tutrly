@@ -41,7 +41,7 @@ function MyProfile() {
 
   return (
     <div style={{ padding: '8rem 5% 4rem', minHeight: 'calc(100vh - 100px)' }}>
-      <div style={{ background: 'white', padding: '3rem', borderRadius: '1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', maxWidth: '800px', margin: '0 auto' }}>
+      <div style={{ background: 'var(--white)', padding: '3rem', borderRadius: '1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', maxWidth: '800px', margin: '0 auto' }}>
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
           <h2 style={{ fontSize: '2rem' }}>My Profile</h2>
@@ -62,22 +62,22 @@ function MyProfile() {
           )}
           <div>
             <h3 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>{userData.name}</h3>
-            <p style={{ color: '#64748B', marginBottom: '0.5rem' }}>{userData.email}</p>
-            <span style={{ background: '#e0e7ff', color: '#4338ca', padding: '0.25rem 0.75rem', borderRadius: '1rem', fontSize: '0.85rem', textTransform: 'capitalize' }}>
+            <p style={{ color: 'var(--text-light)', marginBottom: '0.5rem' }}>{userData.email}</p>
+            <span style={{ background: 'var(--primary-light)', color: 'var(--primary-dark)', padding: '0.25rem 0.75rem', borderRadius: '1rem', fontSize: '0.85rem', textTransform: 'capitalize' }}>
               {userData.role} Account
             </span>
           </div>
         </div>
 
         {isTutor && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid #e2e8f0' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid var(--border-color)' }}>
             <div>
               <h4 style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Hourly Rate</h4>
               <p>₹{userData.hourlyRate || 0} / hr</p>
             </div>
             <div>
               <h4 style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Bio</h4>
-              <p style={{ color: '#334155', whiteSpace: 'pre-wrap' }}>{userData.bio || 'No bio added yet.'}</p>
+              <p style={{ color: 'var(--text-dark)', whiteSpace: 'pre-wrap' }}>{userData.bio || 'No bio added yet.'}</p>
             </div>
             <div>
               <h4 style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Subjects</h4>
@@ -90,7 +90,7 @@ function MyProfile() {
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: '1rem', marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid #e2e8f0' }}>
+        <div style={{ display: 'flex', gap: '1rem', marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid var(--border-color)' }}>
           <button onClick={handleLogout} className="btn-outline">
             Sign Out
           </button>

@@ -70,8 +70,8 @@ function AdminDashboard() {
   const parents = users.filter(u => u.role === 'parent');
 
   return (
-    <div style={{ padding: '8rem 5% 4rem', minHeight: 'calc(100vh - 100px)', background: '#f8fafc' }}>
-      <div style={{ maxWidth: '1000px', margin: '0 auto', background: 'white', padding: '3rem', borderRadius: '1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+    <div style={{ padding: '8rem 5% 4rem', minHeight: 'calc(100vh - 100px)', background: 'var(--background)' }}>
+      <div style={{ maxWidth: '1000px', margin: '0 auto', background: 'var(--white)', padding: '3rem', borderRadius: '1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
           <h2 style={{ fontSize: '2rem' }}><i className="ri-shield-user-fill"></i> Admin Dashboard</h2>
           <div style={{ display: 'flex', gap: '1rem' }}>
@@ -92,13 +92,13 @@ function AdminDashboard() {
 
         {activeTab === 'tutors' && (
           <div>
-            <h3 style={{ marginBottom: '1rem', color: '#334155' }}>Tutors ({tutors.length})</h3>
+            <h3 style={{ marginBottom: '1rem', color: 'var(--text-dark)' }}>Tutors ({tutors.length})</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {tutors.map(tutor => (
-                <div key={tutor.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: '#f8fafc', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
+                <div key={tutor.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'var(--background)', borderRadius: '0.5rem', border: '1px solid var(--border-color)' }}>
                   <div>
                     <p style={{ fontWeight: 'bold' }}>{tutor.name || 'No Name Provided'}</p>
-                    <p style={{ fontSize: '0.9rem', color: '#64748B' }}>{tutor.email}</p>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-light)' }}>{tutor.email}</p>
                     <p style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>
                       Status: {tutor.isVerified ? <span style={{ color: '#10b981', fontWeight: 'bold' }}>Verified</span> : <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>Pending Approval</span>}
                     </p>
@@ -118,13 +118,13 @@ function AdminDashboard() {
 
         {activeTab === 'parents' && (
           <div>
-            <h3 style={{ marginBottom: '1rem', color: '#334155' }}>Parents/Students ({parents.length})</h3>
+            <h3 style={{ marginBottom: '1rem', color: 'var(--text-dark)' }}>Parents/Students ({parents.length})</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {parents.map(parent => (
-                <div key={parent.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: '#f8fafc', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
+                <div key={parent.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'var(--background)', borderRadius: '0.5rem', border: '1px solid var(--border-color)' }}>
                   <div>
                     <p style={{ fontWeight: 'bold' }}>{parent.name || 'No Name Provided'}</p>
-                    <p style={{ fontSize: '0.9rem', color: '#64748B' }}>{parent.email}</p>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-light)' }}>{parent.email}</p>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <button onClick={() => handleRemove(parent.id)} style={{ padding: '0.5rem 1rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: '0.25rem', cursor: 'pointer' }}>Remove</button>

@@ -131,11 +131,11 @@ function BookDemo() {
   if (!tutor) return <div style={{ padding: '8rem 5%', textAlign: 'center', color: 'red' }}>{error}</div>;
 
   return (
-    <div style={{ padding: '8rem 5% 4rem', minHeight: 'calc(100vh - 100px)', background: '#f8fafc' }}>
-      <div style={{ maxWidth: '600px', margin: '0 auto', background: 'white', padding: '3rem', borderRadius: '1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+    <div style={{ padding: '8rem 5% 4rem', minHeight: 'calc(100vh - 100px)', background: 'var(--background)' }}>
+      <div style={{ maxWidth: '600px', margin: '0 auto', background: 'var(--white)', padding: '3rem', borderRadius: '1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
         
         <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Book a Demo with {tutor.name}</h2>
-        <p style={{ color: '#64748B', marginBottom: '2rem' }}>
+        <p style={{ color: 'var(--text-light)', marginBottom: '2rem' }}>
           {tutor.subjects?.join(', ')} • {tutor.classLevels?.join(', ')}
         </p>
 
@@ -152,7 +152,7 @@ function BookDemo() {
               onChange={(e) => {
                 setFormData({...formData, date: e.target.value, startTime: '', endTime: ''});
               }}
-              style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}
+              style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)' }}
             />
           </div>
 
@@ -222,7 +222,7 @@ function BookDemo() {
               value={formData.message}
               onChange={(e) => setFormData({...formData, message: e.target.value})}
               placeholder="What specifically would you like help with?"
-              style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}
+              style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)' }}
             ></textarea>
           </div>
 

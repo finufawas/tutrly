@@ -9,6 +9,17 @@ function Navbar() {
   const isHomePage = location.pathname === '/';
   const { currentUser, userData } = useAuth();
 
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
+
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 50);
@@ -28,7 +39,7 @@ function Navbar() {
   };
 
   return (
-    <nav className="navbar" style={{ background: scrolled ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.7)', boxShadow: scrolled ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none' }}>
+    <nav className="navbar" style={{ background: scrolled ? 'var(--glass-bg)' : 'transparent', boxShadow: scrolled ? 'var(--shadow-sm)' : 'none' }}>
       <div className="logo">
         <Link to="/" style={{ color: 'inherit', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <i className="ri-book-open-line"></i> Tutrly
@@ -56,6 +67,9 @@ function Navbar() {
             <Link to="/login" className="btn-primary" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
           </>
         )}
+        <button onClick={toggleTheme} style={{ background: 'transparent', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: 'var(--text-dark)' }}>
+          {theme === 'light' ? <i className="ri-moon-fill"></i> : <i className="ri-sun-fill"></i>}
+        </button>
       </div>
       <div className="mobile-menu-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
         <i className="ri-menu-line"></i>
