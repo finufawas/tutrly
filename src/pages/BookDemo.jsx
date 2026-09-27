@@ -71,13 +71,13 @@ function BookDemo() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!currentUser) {
-      alert("Please log in to book a demo!");
+      alert("Please log in to book a class!");
       navigate('/login');
       return;
     }
     
     if (userData?.role === 'tutor') {
-      alert("Tutor accounts cannot book demos.");
+      alert("Tutor accounts cannot book classes.");
       return;
     }
     
@@ -119,10 +119,10 @@ function BookDemo() {
         createdAt: new Date().toISOString()
       });
       
-      alert("Demo booked successfully! The tutor will contact you soon.");
+      alert("Class booked successfully! The tutor will contact you soon.");
       navigate('/dashboard');
     } catch (err) {
-      setError('Failed to book demo: ' + err.message);
+      setError('Failed to book: ' + err.message);
       setBooking(false);
     }
   };
@@ -134,7 +134,7 @@ function BookDemo() {
     <div style={{ padding: '8rem 5% 4rem', minHeight: 'calc(100vh - 100px)', background: 'var(--background)' }}>
       <div style={{ maxWidth: '600px', margin: '0 auto', background: 'var(--white)', padding: '3rem', borderRadius: '1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
         
-        <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Book a Demo with {tutor.name}</h2>
+        <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Book a Class with {tutor.name}</h2>
         <p style={{ color: 'var(--text-light)', marginBottom: '2rem' }}>
           {tutor.subjects?.join(', ')} • {tutor.classLevels?.join(', ')}
         </p>
@@ -228,7 +228,7 @@ function BookDemo() {
 
           <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
             <button type="submit" className="btn-primary" disabled={booking}>
-              {booking ? 'Booking...' : 'Confirm Demo'}
+              {booking ? 'Booking...' : 'Confirm Booking'}
             </button>
             <button type="button" className="btn-outline" onClick={() => navigate(-1)}>
               Cancel

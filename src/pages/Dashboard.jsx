@@ -234,11 +234,11 @@ function Dashboard() {
               <Link to="/#find-tutor" className="btn-secondary" style={{ display: 'inline-block' }}>Search Tutors</Link>
             </div>
             <div style={{ padding: '1.5rem', border: '1px solid #E2E8F0', borderRadius: '0.5rem' }}>
-              <h3 style={{ marginBottom: '1rem' }}><i className="ri-calendar-check-line"></i> Booked Demos</h3>
+              <h3 style={{ marginBottom: '1rem' }}><i className="ri-calendar-check-line"></i> My Bookings</h3>
               {loadingBookings ? (
                 <p>Loading bookings...</p>
               ) : bookings.length === 0 ? (
-                <p>You have not booked any demo classes yet.</p>
+                <p>You have not booked any classes yet.</p>
               ) : (
                 <div>
                   {bookings.map(b => renderBookingCard(b, `Tutor: ${b.tutorName}`))}

@@ -55,10 +55,10 @@ function TutorProfile() {
             
             {userData?.role === 'tutor' ? (
               <p style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                <i className="ri-error-warning-line"></i> Tutors cannot book demos with other tutors.
+                <i className="ri-error-warning-line"></i> Tutors cannot book classes with other tutors.
               </p>
             ) : (
-              <Link to={`/book/${tutor.id}`} className="btn-primary" style={{ display: 'inline-block' }}>Book a Demo</Link>
+              <Link to={`/book/${tutor.id}`} className="btn-primary" style={{ display: 'inline-block' }}>Book a Class</Link>
             )}
             
           </div>

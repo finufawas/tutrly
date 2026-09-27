@@ -136,7 +136,7 @@ function Home() {
             <div style={{ textAlign: 'center', padding: '1.5rem' }}>
               <i className="ri-calendar-schedule-fill" style={{ fontSize: '2.5rem', color: 'var(--primary)', marginBottom: '1rem', display: 'block' }}></i>
               <h3>Easy Booking</h3>
-              <p>Book free demo classes instantly. See real-time availability and pick a slot that works for you.</p>
+              <p>Book classes instantly. See real-time availability and pick a slot that works for you.</p>
             </div>
             <div style={{ textAlign: 'center', padding: '1.5rem' }}>
               <i className="ri-home-heart-fill" style={{ fontSize: '2.5rem', color: 'var(--primary)', marginBottom: '1rem', display: 'block' }}></i>
@@ -169,8 +169,8 @@ function Home() {
               </div>
               <div className="step-card">
                 <div className="step-icon"><i className="ri-calendar-check-line"></i><div className="step-number">3</div></div>
-                <h3>Book a Demo</h3>
-                <p>Schedule a free demo class. If it's a match, start regular home tuition.</p>
+                <h3>Book a Class</h3>
+                <p>Schedule a class with your preferred tutor and start learning.</p>
               </div>
             </>
           ) : isTutor ? (
@@ -182,7 +182,7 @@ function Home() {
               </div>
               <div className="step-card">
                 <div className="step-icon"><i className="ri-check-double-line"></i><div className="step-number">2</div></div>
-                <h3>Accept Demos</h3>
+                <h3>Accept Bookings</h3>
                 <p>Receive booking requests from parents and accept the ones that fit your schedule.</p>
               </div>
               <div className="step-card">
@@ -200,8 +200,8 @@ function Home() {
               </div>
               <div className="step-card">
                 <div className="step-icon"><i className="ri-calendar-check-line"></i><div className="step-number">2</div></div>
-                <h3>Book a Demo</h3>
-                <p>Schedule a free demo class to ensure the perfect student-tutor match.</p>
+                <h3>Book a Class</h3>
+                <p>Schedule a class to ensure the perfect student-tutor match.</p>
               </div>
               <div className="step-card">
                 <div className="step-icon"><i className="ri-line-chart-line"></i><div className="step-number">3</div></div>
