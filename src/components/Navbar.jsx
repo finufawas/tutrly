@@ -37,7 +37,10 @@ function Navbar() {
       <div className="nav-links" style={{ display: mobileMenuOpen ? 'flex' : '' }}>
         <Link to="/" onClick={(e) => smoothScroll(e, '#home')}>Home</Link>
         <Link to={isHomePage ? "/" : "/"} onClick={(e) => smoothScroll(e, '#how-it-works')}>How it Works</Link>
-        <Link to={isHomePage ? "/" : "/"} onClick={(e) => smoothScroll(e, '#find-tutor')}>Find Tutor</Link>
+        
+        {userData?.role !== 'tutor' && (
+          <Link to={isHomePage ? "/" : "/"} onClick={(e) => smoothScroll(e, '#find-tutor')}>Find Tutor</Link>
+        )}
         
         {currentUser ? (
           <>
