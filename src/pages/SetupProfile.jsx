@@ -1,24 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
+
+const TINTS = ['tint-0', 'tint-2', 'tint-1', 'tint-3', 'tint-4'];
 
 function SetupProfile() {
   const { currentUser, userData } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
   const isTutor = userData?.role === 'tutor';
 
-  // Parent/Student fields
+  // Parent / Student
   const [studentName, setStudentName] = useState('');
   const [studentClass, setStudentClass] = useState('');
   const [studentBoard, setStudentBoard] = useState([]);
   const [phone, setPhone] = useState('');
-
-  // Tutor fields
+  // Tutor
   const [bio, setBio] = useState('');
   const [hourlyRate, setHourlyRate] = useState('');
   const [subjects, setSubjects] = useState([]);
@@ -30,25 +30,15 @@ function SetupProfile() {
   const allBoards = ['State', 'CBSE', 'ICSE'];
   const allDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-  const toggleItem = (arr, setArr, item) => {
-    if (arr.includes(item)) {
-      setArr(arr.filter(i => i !== item));
-    } else {
-      setArr([...arr, item]);
-    }
-  };
+  useEffect(() => { if (userData?.profileComplete) navigate('/'); }, [userData, navigate]);
 
-  const addSlot = (day) => {
-    const current = availability[day] || [];
-    setAvailability({ ...availability, [day]: [...current, { start: '09:00', end: '10:00' }] });
-  };
-
+  const toggleItem = (arr, setArr, item) => setArr(arr.includes(item) ? arr.filter(i => i !== item) : [...arr, item]);
+  const addSlot = (day) => setAvailability({ ...availability, [day]: [...(availability[day] || []), { start: '09:00', end: '10:00' }] });
   const updateSlot = (day, idx, field, value) => {
     const updated = [...(availability[day] || [])];
     updated[idx] = { ...updated[idx], [field]: value };
     setAvailability({ ...availability, [day]: updated });
   };
-
   const removeSlot = (day, idx) => {
     const updated = [...(availability[day] || [])];
     updated.splice(idx, 1);
@@ -57,42 +47,22 @@ function SetupProfile() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
-
+    setError(''); setLoading(true);
     try {
       const userRef = doc(db, 'users', currentUser.uid);
-
       if (isTutor) {
         if (subjects.length === 0) throw new Error('Please select at least one subject.');
         if (classLevels.length === 0) throw new Error('Please select at least one class level.');
         if (boards.length === 0) throw new Error('Please select at least one board.');
         if (!hourlyRate || Number(hourlyRate) <= 0) throw new Error('Please enter a valid hourly rate.');
         if (!bio.trim()) throw new Error('Please write a short bio.');
-
-        await updateDoc(userRef, {
-          subjects,
-          classLevels,
-          boards,
-          hourlyRate: Number(hourlyRate),
-          bio: bio.trim(),
-          availability,
-          profileComplete: true
-        });
+        await updateDoc(userRef, { subjects, classLevels, boards, hourlyRate: Number(hourlyRate), bio: bio.trim(), availability, profileComplete: true });
       } else {
-        if (!studentName.trim()) throw new Error('Please enter the student\'s name.');
+        if (!studentName.trim()) throw new Error("Please enter the student's name.");
         if (!studentClass) throw new Error('Please select the class level.');
         if (studentBoard.length === 0) throw new Error('Please select at least one board.');
-
-        await updateDoc(userRef, {
-          studentName: studentName.trim(),
-          studentClass,
-          studentBoard,
-          phone: phone.trim(),
-          profileComplete: true
-        });
+        await updateDoc(userRef, { studentName: studentName.trim(), studentClass, studentBoard, phone: phone.trim(), profileComplete: true });
       }
-
       navigate('/');
     } catch (err) {
       setError(err.message);
@@ -100,213 +70,126 @@ function SetupProfile() {
     setLoading(false);
   };
 
-  if (!userData) return <div style={{ padding: '8rem 5%', textAlign: 'center' }}>Loading...</div>;
+  if (!userData) return <div className="page"><div className="spinner-container"><div className="spinner"></div></div></div>;
+  if (userData.profileComplete) return null;
 
-  // If profile is already complete, redirect to home
-  if (userData.profileComplete) {
-    navigate('/');
-    return null;
-  }
-
-  const chipStyle = (selected) => ({
-    padding: '0.5rem 1rem',
-    borderRadius: '2rem',
-    border: selected ? '2px solid var(--primary)' : '1px solid var(--border-color)',
-    background: selected ? 'var(--primary)' : 'var(--white)',
-    color: selected ? 'white' : 'var(--text-dark)',
-    cursor: 'pointer',
-    fontSize: '0.9rem',
-    fontWeight: selected ? 'bold' : 'normal',
-    transition: 'all 0.2s ease'
-  });
-
-  const inputStyle = {
-    width: '100%',
-    padding: '0.75rem',
-    borderRadius: '0.5rem',
-    border: '1px solid var(--border-color)',
-    fontSize: '1rem',
-    background: 'var(--white)',
-    color: 'var(--text-dark)'
-  };
-
-  const labelStyle = {
-    display: 'block',
-    marginBottom: '0.5rem',
-    fontWeight: 'bold',
-    color: 'var(--text-dark)'
-  };
+  const hasSlots = Object.values(availability).some(s => s?.length);
+  const steps = isTutor
+    ? [
+        { label: 'Teaching', sub: 'Subjects, classes, boards', done: subjects.length && classLevels.length && boards.length },
+        { label: 'Availability', sub: 'Weekly time slots', done: hasSlots },
+        { label: 'Bio & rate', sub: 'What parents will read', done: bio.trim() && Number(hourlyRate) > 0 }
+      ]
+    : [
+        { label: 'Student', sub: "Student's full name", done: studentName.trim() },
+        { label: 'Class & board', sub: 'So we match the syllabus', done: studentClass && studentBoard.length },
+        { label: 'Contact', sub: 'Phone number (optional)', done: phone.trim() }
+      ];
+  const currentIdx = steps.findIndex(s => !s.done);
+  const stepClass = (s, i) => (s.done ? 'done' : i === currentIdx ? 'current' : '');
+  const firstChild = studentName.trim().split(' ')[0];
 
   return (
-    <div style={{ padding: '8rem 5% 4rem', minHeight: 'calc(100vh - 100px)', background: 'var(--background)' }}>
-      <div style={{ maxWidth: '700px', margin: '0 auto', background: 'var(--white)', padding: '3rem', borderRadius: '1.5rem', boxShadow: 'var(--shadow-lg)' }}>
-        
-        <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-          <div style={{ width: '60px', height: '60px', background: 'var(--primary)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '1.5rem', color: 'white' }}>
-            <i className={isTutor ? 'ri-user-star-fill' : 'ri-graduation-cap-fill'}></i>
-          </div>
-          <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
-            {isTutor ? 'Set Up Your Tutor Profile' : 'Complete Your Profile'}
-          </h2>
-          <p style={{ color: 'var(--text-light)' }}>
-            {isTutor
-              ? 'Fill in your teaching details so parents can find and book you.'
-              : 'Tell us about your child so we can find the best tutors for them.'}
-          </p>
+    <div className="setup-page">
+      <aside className="setup-side">
+        <div>
+          <h2>{isTutor ? 'Set Up Your Tutor Profile' : 'Complete Your Profile'}</h2>
+          <p style={{ marginTop: '0.6rem' }}>{isTutor ? 'Fill in your teaching details so parents can find and book you.' : 'Tell us about your child so we can find the best tutors for them.'}</p>
         </div>
+        <div className="setup-steps">
+          {steps.map((s, i) => (
+            <div key={s.label} className={`setup-step ${stepClass(s, i)}`}>
+              <span className="dot"><i className={s.done ? 'ri-check-line' : i === currentIdx ? 'ri-pencil-fill' : 'ri-checkbox-blank-circle-line'}></i></span>
+              <div><b>{s.label}</b><small>{s.sub}</small></div>
+            </div>
+          ))}
+        </div>
+        {isTutor && <div className="alert alert-warning" style={{ margin: 0 }}><i className="ri-information-line"></i><p>Your profile is reviewed by our team before parents can find you.</p></div>}
+      </aside>
 
-        {error && (
-          <div style={{ color: '#dc2626', marginBottom: '1.5rem', padding: '1rem', background: '#fee2e2', borderRadius: '0.5rem', textAlign: 'center' }}>
-            <i className="ri-error-warning-line"></i> {error}
-          </div>
-        )}
+      <form className="setup-card" onSubmit={handleSubmit}>
+        {error && <div className="alert alert-error" style={{ margin: 0 }}><i className="ri-error-warning-line"></i><p>{error}</p></div>}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          
-          {isTutor ? (
-            <>
-              {/* Tutor Setup */}
-              <div>
-                <label style={labelStyle}>Subjects You Teach *</label>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  {allSubjects.map(sub => (
-                    <span key={sub} onClick={() => toggleItem(subjects, setSubjects, sub)} style={chipStyle(subjects.includes(sub))}>
-                      {sub}
-                    </span>
-                  ))}
-                </div>
+        {isTutor ? (
+          <>
+            <div className="setup-section">
+              <h3>Subjects You Teach *</h3>
+              <div className="chip-row">
+                {allSubjects.map(sub => <button type="button" key={sub} className={`chip soft ${subjects.includes(sub) ? 'active' : ''}`} onClick={() => toggleItem(subjects, setSubjects, sub)}>{sub}</button>)}
               </div>
-
-              <div>
-                <label style={labelStyle}>Class Levels *</label>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  {[...Array(12)].map((_, i) => {
-                    const cls = `Class ${i + 1}`;
-                    return (
-                      <span key={cls} onClick={() => toggleItem(classLevels, setClassLevels, cls)} style={chipStyle(classLevels.includes(cls))}>
-                        {cls}
-                      </span>
-                    );
-                  })}
-                </div>
+            </div>
+            <div className="setup-section">
+              <h3>Class Levels *</h3>
+              <div className="class-tiles">
+                {[...Array(12)].map((_, i) => {
+                  const cls = `Class ${i + 1}`;
+                  return <button type="button" key={cls} className={`class-tile ${TINTS[i % 5]} ${classLevels.includes(cls) ? 'active' : ''}`} onClick={() => toggleItem(classLevels, setClassLevels, cls)}>{i + 1}</button>;
+                })}
               </div>
-
-              <div>
-                <label style={labelStyle}>Boards *</label>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  {allBoards.map(b => (
-                    <span key={b} onClick={() => toggleItem(boards, setBoards, b)} style={chipStyle(boards.includes(b))}>
-                      {b}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label style={labelStyle}>Hourly Rate (₹) *</label>
-                <input
-                  type="number"
-                  value={hourlyRate}
-                  onChange={(e) => setHourlyRate(e.target.value)}
-                  placeholder="e.g. 500"
-                  style={inputStyle}
-                  min="1"
-                />
-              </div>
-
-              <div>
-                <label style={labelStyle}>Short Bio *</label>
-                <textarea
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder="Tell parents about your experience, teaching style, and achievements..."
-                  rows="4"
-                  style={inputStyle}
-                ></textarea>
-              </div>
-
-              <div>
-                <label style={labelStyle}>Weekly Availability</label>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-light)', marginBottom: '1rem' }}>Set your available time slots for each day.</p>
+            </div>
+            <div className="setup-section">
+              <h3>Boards *</h3>
+              <div className="chip-row">{allBoards.map(b => <button type="button" key={b} className={`chip soft ${boards.includes(b) ? 'active' : ''}`} onClick={() => toggleItem(boards, setBoards, b)}>{b}</button>)}</div>
+            </div>
+            <div className="setup-section">
+              <h3>Weekly Availability</h3>
+              <p style={{ fontSize: '0.875rem', marginTop: '-0.3rem' }}>Set your available time slots for each day.</p>
+              <div className="avail-grid-2">
                 {allDays.map(day => (
-                  <div key={day} style={{ marginBottom: '1rem', padding: '1rem', background: 'var(--background)', borderRadius: '0.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                      <span style={{ fontWeight: 'bold' }}>{day}</span>
-                      <button type="button" onClick={() => addSlot(day)} style={{ background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '0.25rem', padding: '0.25rem 0.75rem', cursor: 'pointer', fontSize: '0.85rem' }}>
-                        + Add Slot
-                      </button>
-                    </div>
+                  <div key={day} className="avail-day">
+                    <div className="avail-day-head"><b>{day}</b><button type="button" className="btn btn-sm" style={{ height: 34 }} onClick={() => addSlot(day)}>+ Add Slot</button></div>
                     {(availability[day] || []).map((slot, idx) => (
-                      <div key={idx} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
-                        <input type="time" value={slot.start} onChange={(e) => updateSlot(day, idx, 'start', e.target.value)} style={{ ...inputStyle, width: 'auto' }} />
-                        <span>to</span>
-                        <input type="time" value={slot.end} onChange={(e) => updateSlot(day, idx, 'end', e.target.value)} style={{ ...inputStyle, width: 'auto' }} />
-                        <button type="button" onClick={() => removeSlot(day, idx)} style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '0.25rem', padding: '0.25rem 0.5rem', cursor: 'pointer' }}>
-                          <i className="ri-delete-bin-line"></i>
-                        </button>
+                      <div key={idx} className="avail-slot">
+                        <input className="input" type="time" value={slot.start} onChange={(e) => updateSlot(day, idx, 'start', e.target.value)} />
+                        <span className="muted">to</span>
+                        <input className="input" type="time" value={slot.end} onChange={(e) => updateSlot(day, idx, 'end', e.target.value)} />
+                        <button type="button" className="icon-btn" onClick={() => removeSlot(day, idx)} aria-label="Remove slot" style={{ color: 'var(--danger)' }}><i className="ri-delete-bin-line"></i></button>
                       </div>
                     ))}
-                    {(!availability[day] || availability[day].length === 0) && (
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-light)' }}>No slots added — day off</p>
-                    )}
+                    {!(availability[day] || []).length && <p style={{ fontSize: '0.8rem' }}>No slots added — day off</p>}
                   </div>
                 ))}
               </div>
-            </>
-          ) : (
-            <>
-              {/* Parent/Student Setup */}
-              <div>
-                <label style={labelStyle}>Student's Full Name *</label>
-                <input
-                  type="text"
-                  value={studentName}
-                  onChange={(e) => setStudentName(e.target.value)}
-                  placeholder="Enter student's name"
-                  style={inputStyle}
-                />
+            </div>
+            <div className="setup-section">
+              <h3>Hourly Rate (₹) *</h3>
+              <input className="input" type="number" value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} placeholder="e.g. 500" min="1" style={{ maxWidth: 240 }} />
+            </div>
+            <div className="setup-section">
+              <h3>Short Bio *</h3>
+              <textarea className="textarea" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell parents about your experience, teaching style, and achievements..." rows="4"></textarea>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="setup-section">
+              <h3>Student's Full Name *</h3>
+              <input className="input" type="text" value={studentName} onChange={(e) => setStudentName(e.target.value)} placeholder="Enter student's name" />
+            </div>
+            <div className="setup-section">
+              <h1 style={{ fontSize: 'clamp(1.8rem, 3.4vw, 2.8rem)' }}>Which class is {firstChild || 'your child'} in?</h1>
+              <div className="class-tiles">
+                {[...Array(12)].map((_, i) => {
+                  const cls = `Class ${i + 1}`;
+                  return <button type="button" key={cls} className={`class-tile ${TINTS[i % 5]} ${studentClass === cls ? 'active' : ''}`} onClick={() => setStudentClass(cls)}>{i + 1}</button>;
+                })}
               </div>
+            </div>
+            <div className="setup-section">
+              <h3>Board *</h3>
+              <div className="chip-row">{allBoards.map(b => <button type="button" key={b} className={`chip soft ${studentBoard.includes(b) ? 'active' : ''}`} onClick={() => toggleItem(studentBoard, setStudentBoard, b)}>{studentBoard.includes(b) && <i className="ri-check-line"></i>}{b}</button>)}</div>
+            </div>
+            <div className="setup-section">
+              <h3>Phone Number <span className="muted" style={{ fontWeight: 600 }}>(Optional)</span></h3>
+              <input className="input" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="e.g. 9876543210" style={{ maxWidth: 320 }} />
+            </div>
+          </>
+        )}
 
-              <div>
-                <label style={labelStyle}>Class Level *</label>
-                <select value={studentClass} onChange={(e) => setStudentClass(e.target.value)} style={inputStyle}>
-                  <option value="">Select Class</option>
-                  {[...Array(12)].map((_, i) => (
-                    <option key={i + 1} value={`Class ${i + 1}`}>Class {i + 1}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label style={labelStyle}>Board *</label>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  {allBoards.map(b => (
-                    <span key={b} onClick={() => toggleItem(studentBoard, setStudentBoard, b)} style={chipStyle(studentBoard.includes(b))}>
-                      {b}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label style={labelStyle}>Phone Number (Optional)</label>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="e.g. 9876543210"
-                  style={inputStyle}
-                />
-              </div>
-            </>
-          )}
-
-          <button type="submit" className="btn-primary" disabled={loading} style={{ padding: '1rem', fontSize: '1.1rem', justifyContent: 'center', marginTop: '1rem' }}>
-            {loading ? 'Saving...' : 'Complete Setup →'}
-          </button>
-        </form>
-
-      </div>
+        <div className="setup-actions">
+          <button type="submit" className="btn btn-lg" disabled={loading}>{loading ? 'Saving...' : <>Complete Setup <i className="ri-arrow-right-line"></i></>}</button>
+        </div>
+      </form>
     </div>
   );
 }
