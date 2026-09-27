@@ -97,7 +97,7 @@ function AdminDashboard() {
               {tutors.map(tutor => (
                 <div key={tutor.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: '#f8fafc', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
                   <div>
-                    <p style={{ fontWeight: 'bold' }}>{tutor.name}</p>
+                    <p style={{ fontWeight: 'bold' }}>{tutor.name || 'No Name Provided'}</p>
                     <p style={{ fontSize: '0.9rem', color: '#64748B' }}>{tutor.email}</p>
                     <p style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>
                       Status: {tutor.isVerified ? <span style={{ color: '#10b981', fontWeight: 'bold' }}>Verified</span> : <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>Pending Approval</span>}
@@ -123,7 +123,7 @@ function AdminDashboard() {
               {parents.map(parent => (
                 <div key={parent.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: '#f8fafc', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
                   <div>
-                    <p style={{ fontWeight: 'bold' }}>{parent.name}</p>
+                    <p style={{ fontWeight: 'bold' }}>{parent.name || 'No Name Provided'}</p>
                     <p style={{ fontSize: '0.9rem', color: '#64748B' }}>{parent.email}</p>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
