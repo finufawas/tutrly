@@ -10,10 +10,8 @@ function ScrollToTop() {
 
     // Use a small timeout to ensure the new page DOM has rendered before scrolling
     const timer = setTimeout(() => {
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-      document.documentElement.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-      document.body.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    }, 10);
+      window.scrollTo(0, 0);
+    }, 50);
 
     return () => clearTimeout(timer);
   }, [pathname, hash]);

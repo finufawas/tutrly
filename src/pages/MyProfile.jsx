@@ -45,11 +45,9 @@ function MyProfile() {
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
           <h2 style={{ fontSize: '2rem' }}>My Profile</h2>
-          {isTutor && (
-            <Link to="/edit-profile" className="btn-secondary">
-              Edit Profile
-            </Link>
-          )}
+          <Link to="/edit-profile" className="btn-secondary">
+            Edit Profile
+          </Link>
         </div>
 
         <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap' }}>

@@ -38,11 +38,11 @@ function Dashboard() {
       console.error('Error fetching bookings:', error);
     }
     setLoadingBookings(false);
-    
+
     // Explicitly scroll to top after loading finishes so the browser doesn't jump
     setTimeout(() => {
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    }, 10);
+      window.scrollTo(0, 0);
+    }, 50);
   };
 
   useEffect(() => { fetchBookings(); }, [currentUser, userData, isTutor]);
