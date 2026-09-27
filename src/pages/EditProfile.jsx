@@ -161,7 +161,7 @@ function EditProfile() {
       // Force reload to get fresh data context or navigate to dashboard where it might trigger re-render
       // We removed window.location.reload() to prevent 404s on GitHub Pages.
       // AuthContext now uses onSnapshot to update data in real-time!
-      navigate('/dashboard');
+      navigate('/profile');
     } catch (err) {
       setError('Failed to update profile: ' + err.message);
     }
@@ -328,7 +328,7 @@ function EditProfile() {
             <button type="submit" className="btn-primary" disabled={loading}>
               {loading ? 'Saving...' : 'Save Profile'}
             </button>
-            <button type="button" className="btn-outline" onClick={() => navigate('/dashboard')}>
+            <button type="button" className="btn-outline" onClick={() => navigate('/profile')}>
               Cancel
             </button>
           </div>
