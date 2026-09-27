@@ -39,6 +39,35 @@ function BookDemo() {
     fetchTutor();
   }, [tutorId]);
 
+  const [bookedSlots, setBookedSlots] = useState([]);
+
+  useEffect(() => {
+    const fetchBookings = async () => {
+      if (!formData.date || !tutorId) return;
+      
+      try {
+        const q = query(
+          collection(db, 'bookings'), 
+          where('tutorId', '==', tutorId),
+          where('date', '==', formData.date)
+        );
+        
+        const querySnapshot = await getDocs(q);
+        const booked = [];
+        querySnapshot.forEach((doc) => {
+          const b = doc.data();
+          if (b.status !== 'cancelled') {
+            booked.push({ start: b.startTime, end: b.endTime });
+          }
+        });
+        setBookedSlots(booked);
+      } catch (err) {
+        console.error("Error fetching bookings:", err);
+      }
+    };
+    fetchBookings();
+  }, [formData.date, tutorId]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!currentUser) {
@@ -65,24 +94,13 @@ function BookDemo() {
       }
 
       // Check for overlapping bookings on the same date for this tutor
-      const q = query(
-        collection(db, 'bookings'), 
-        where('tutorId', '==', tutorId),
-        where('date', '==', formData.date)
-      );
-      
-      const querySnapshot = await getDocs(q);
       let hasOverlap = false;
-      
-      querySnapshot.forEach((doc) => {
-        const booking = doc.data();
-        if (booking.status !== 'cancelled') {
-          // Overlap condition: newStart < oldEnd AND newEnd > oldStart
-          if (formData.startTime < booking.endTime && formData.endTime > booking.startTime) {
-            hasOverlap = true;
-          }
+      for (const b of bookedSlots) {
+        if (formData.startTime < b.end && formData.endTime > b.start) {
+          hasOverlap = true;
+          break;
         }
-      });
+      }
       
       if (hasOverlap) {
         throw new Error("The tutor is already booked during this time range. Please select another time.");
@@ -131,16 +149,15 @@ function BookDemo() {
               required
               min={new Date().toISOString().split('T')[0]} // Can't book in the past
               value={formData.date}
-              onChange={(e) => setFormData({...formData, date: e.target.value})}
+              onChange={(e) => {
+                setFormData({...formData, date: e.target.value, startTime: '', endTime: ''});
+              }}
               style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}
             />
           </div>
 
           {formData.date && (() => {
             const dateObj = new Date(formData.date);
-            // new Date("YYYY-MM-DD") in JS parses as UTC if no time is given.
-            // Using getUTCDay or just letting it adjust.
-            // A safer way is to split:
             const [y, m, d] = formData.date.split('-');
             const localDate = new Date(y, m - 1, d);
             const dayOfWeek = localDate.toLocaleDateString('en-US', { weekday: 'long' });
@@ -160,21 +177,36 @@ function BookDemo() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.5rem' }}>
                   {availableSlots.map((slot, idx) => {
                     const isSelected = formData.startTime === slot.start && formData.endTime === slot.end;
+                    
+                    let isBooked = false;
+                    for (const b of bookedSlots) {
+                      if (slot.start < b.end && slot.end > b.start) {
+                        isBooked = true;
+                        break;
+                      }
+                    }
+
                     return (
                       <div 
                         key={idx}
-                        onClick={() => setFormData({...formData, startTime: slot.start, endTime: slot.end})}
+                        onClick={() => {
+                          if (!isBooked) {
+                            setFormData({...formData, startTime: slot.start, endTime: slot.end})
+                          }
+                        }}
                         style={{ 
                           padding: '0.75rem', 
                           textAlign: 'center',
                           borderRadius: '0.5rem', 
                           border: isSelected ? '2px solid #3b82f6' : '1px solid #cbd5e1',
-                          background: isSelected ? '#eff6ff' : 'white',
-                          cursor: 'pointer',
-                          fontWeight: isSelected ? 'bold' : 'normal'
+                          background: isBooked ? '#f1f5f9' : (isSelected ? '#eff6ff' : 'white'),
+                          cursor: isBooked ? 'not-allowed' : 'pointer',
+                          fontWeight: isSelected ? 'bold' : 'normal',
+                          color: isBooked ? '#94a3b8' : 'inherit'
                         }}
+                        title={isBooked ? "This slot is already booked" : ""}
                       >
-                        {slot.start} - {slot.end}
+                        {slot.start} - {slot.end} {isBooked && '(Booked)'}
                       </div>
                     );
                   })}

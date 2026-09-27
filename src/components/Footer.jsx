@@ -12,17 +12,17 @@ function Footer() {
           </div>
         </div>
         <div className="footer-links">
-          <h4>For Parents</h4><a href="#">Find a Tutor</a><a href="#">Request a Tutor</a><a href="#">Pricing</a>
+          <h4>For Parents</h4><span style={{color: '#64748B', display: 'block', marginBottom: '0.75rem'}}>Find a Tutor</span><span style={{color: '#64748B', display: 'block', marginBottom: '0.75rem'}}>Request a Tutor</span><span style={{color: '#64748B', display: 'block', marginBottom: '0.75rem'}}>Pricing (Coming Soon)</span>
         </div>
         <div className="footer-links">
-          <h4>For Tutors</h4><a href="#">Join as Tutor</a><a href="#">Tutor Guidelines</a><a href="#">Success Stories</a>
+          <h4>For Tutors</h4><span style={{color: '#64748B', display: 'block', marginBottom: '0.75rem'}}>Join as Tutor</span><span style={{color: '#64748B', display: 'block', marginBottom: '0.75rem'}}>Tutor Guidelines</span><span style={{color: '#64748B', display: 'block', marginBottom: '0.75rem'}}>Success Stories</span>
         </div>
         <div className="footer-links">
-          <h4>Company</h4><a href="#">About Us</a><a href="#">Contact Support</a><a href="#">Privacy Policy</a>
+          <h4>Company</h4><span style={{color: '#64748B', display: 'block', marginBottom: '0.75rem'}}>About Us</span><span style={{color: '#64748B', display: 'block', marginBottom: '0.75rem'}}>Contact Support</span><span style={{color: '#64748B', display: 'block', marginBottom: '0.75rem'}}>Privacy Policy</span>
         </div>
       </div>
       <div className="footer-bottom">
-        <p>&copy; 2024 Tutrly. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} Tutrly. All rights reserved.</p>
       </div>
     </footer>
   );

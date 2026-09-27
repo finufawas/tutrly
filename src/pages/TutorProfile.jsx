@@ -73,6 +73,16 @@ function TutorProfile() {
           </div>
 
           <div>
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>Boards Taught</h3>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              {tutor.boards?.map(b => (
+                <span key={b} style={{ background: '#fef3c7', color: '#d97706', padding: '0.5rem 1rem', borderRadius: '2rem', fontSize: '0.9rem', fontWeight: 'bold' }}>{b}</span>
+              ))}
+              {(!tutor.boards || tutor.boards.length === 0) && <span style={{ color: '#64748B' }}>None listed</span>}
+            </div>
+          </div>
+
+          <div>
             <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>Subjects</h3>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               {tutor.subjects?.map(sub => (
@@ -90,6 +100,32 @@ function TutorProfile() {
               ))}
               {(!tutor.classLevels || tutor.classLevels.length === 0) && <span style={{ color: '#64748B' }}>None listed</span>}
             </div>
+          </div>
+
+          <div>
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>Availability</h3>
+            {(!tutor.availability || Object.keys(tutor.availability).length === 0) ? (
+              <span style={{ color: '#64748B' }}>No availability set</span>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => {
+                  const slots = tutor.availability[day];
+                  if (!slots || slots.length === 0) return null;
+                  return (
+                    <div key={day} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                      <span style={{ width: '100px', fontWeight: 'bold', color: '#334155' }}>{day}</span>
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        {slots.map((slot, idx) => (
+                          <span key={idx} style={{ background: '#f0fdf4', color: '#166534', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.85rem', border: '1px solid #bbf7d0' }}>
+                            {slot.start} - {slot.end}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 

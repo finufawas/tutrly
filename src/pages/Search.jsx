@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
+import { useAuth } from '../context/AuthContext';
 import tutorPlaceholder from '../assets/images/tutor_1.jpg'; // We'll use this as fallback
 
 function Search() {
@@ -12,6 +13,14 @@ function Search() {
   
   const [tutors, setTutors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const { userData } = useAuth();
+
+  useEffect(() => {
+    if (userData?.role === 'tutor') {
+      navigate('/dashboard');
+    }
+  }, [userData, navigate]);
 
   // Form states so they can change the search on this page
   const [classLevel, setClassLevel] = useState(classParam);
@@ -118,6 +127,11 @@ function Search() {
                     <div className="rating"><i className="ri-star-fill"></i> New</div>
                   </div>
                   <p className="tutor-subject">{tutor.subjects?.join(', ') || 'No subjects listed'}</p>
+                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    {tutor.boards?.map(b => (
+                      <span key={b} style={{ background: '#f1f5f9', color: '#475569', padding: '0.1rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.75rem' }}>{b}</span>
+                    ))}
+                  </div>
                   <p className="tutor-classes">{tutor.classLevels?.join(', ') || 'No classes listed'}</p>
                   <p style={{ marginTop: '0.5rem', color: '#64748B', fontSize: '0.9rem', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                     {tutor.bio || 'This tutor has not added a bio yet.'}
