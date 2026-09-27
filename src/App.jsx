@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import BottomNav from './components/BottomNav';
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -14,6 +15,7 @@ import TutorProfile from './pages/TutorProfile';
 import AdminDashboard from './pages/AdminDashboard';
 import NotFound from './pages/NotFound';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import ScrollToTop from './components/ScrollToTop';
 import './App.css';
 
 // Requires login — redirects guests to /login
@@ -37,87 +39,31 @@ function AdminRoute({ children }) {
   return children;
 }
 
+const P = (el) => <ProtectedRoute>{el}</ProtectedRoute>;
+
 function App() {
   const basename = import.meta.env.BASE_URL || '/';
 
   return (
     <AuthProvider>
       <Router basename={basename}>
+        <ScrollToTop />
         <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
-          
-          {/* Setup profile — protected, for first-time users */}
-          <Route 
-            path="/setup-profile" 
-            element={
-              <ProtectedRoute>
-                <SetupProfile />
-              </ProtectedRoute>
-            } 
-          />
-
-          {/* These pages require login (guests are redirected to /login) */}
-          <Route 
-            path="/search" 
-            element={
-              <ProtectedRoute>
-                <Search />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/tutor/:tutorId" 
-            element={
-              <ProtectedRoute>
-                <TutorProfile />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/book/:tutorId" 
-            element={
-              <ProtectedRoute>
-                <BookDemo />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/profile" 
-            element={
-              <ProtectedRoute>
-                <MyProfile />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/edit-profile" 
-            element={
-              <ProtectedRoute>
-                <EditProfile />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/admin" 
-            element={
-              <AdminRoute>
-                <AdminDashboard />
-              </AdminRoute>
-            } 
-          />
+          <Route path="/setup-profile" element={P(<SetupProfile />)} />
+          <Route path="/search" element={P(<Search />)} />
+          <Route path="/tutor/:tutorId" element={P(<TutorProfile />)} />
+          <Route path="/book/:tutorId" element={P(<BookDemo />)} />
+          <Route path="/dashboard" element={P(<Dashboard />)} />
+          <Route path="/profile" element={P(<MyProfile />)} />
+          <Route path="/edit-profile" element={P(<EditProfile />)} />
+          <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Footer />
+        <BottomNav />
       </Router>
     </AuthProvider>
   );
