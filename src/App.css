@@ -523,6 +523,16 @@ footer {
 @media (max-width: 768px) {
     .nav-links {
         display: none;
+        flex-direction: column;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background: var(--white);
+        padding: 2rem;
+        box-shadow: var(--shadow-md);
+        gap: 1.5rem;
+        border-bottom: 1px solid var(--glass-border);
     }
     .mobile-menu-btn {
         display: block;
