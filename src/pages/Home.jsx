@@ -24,29 +24,37 @@ function Home() {
           <h1>Unlock Your Child's Full <span className="highlight">Potential</span></h1>
           <p>Connect with expert home tutors tailored to your child's learning style. Personalized education right at your doorstep.</p>
           
-          <div className="search-box">
-            <div className="search-field">
-              <i className="ri-graduation-cap-line"></i>
-              <select value={classLevel} onChange={(e) => setClassLevel(e.target.value)}>
-                <option value="">Select Class</option>
-                {[...Array(12)].map((_, i) => (
-                  <option key={i+1} value={`Class ${i+1}`}>Class {i+1}</option>
-                ))}
-              </select>
+          {isTutor ? (
+            <div style={{ marginTop: '2rem' }}>
+              <button className="btn-primary btn-large" onClick={() => navigate('/dashboard')} style={{ padding: '1rem 2rem', fontSize: '1.2rem' }}>
+                <i className="ri-dashboard-line"></i> Go to Dashboard
+              </button>
             </div>
-            <div className="search-divider"></div>
-            <div className="search-field">
-              <i className="ri-book-2-line"></i>
-              <input 
-                type="text" 
-                placeholder="Subject (e.g. Math)" 
-                value={subject} 
-                onChange={(e) => setSubject(e.target.value)}
-                style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: '1rem', width: '100%' }}
-              />
+          ) : (
+            <div className="search-box">
+              <div className="search-field">
+                <i className="ri-graduation-cap-line"></i>
+                <select value={classLevel} onChange={(e) => setClassLevel(e.target.value)}>
+                  <option value="">Select Class</option>
+                  {[...Array(12)].map((_, i) => (
+                    <option key={i+1} value={`Class ${i+1}`}>Class {i+1}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="search-divider"></div>
+              <div className="search-field">
+                <i className="ri-book-2-line"></i>
+                <input 
+                  type="text" 
+                  placeholder="Subject (e.g. Math)" 
+                  value={subject} 
+                  onChange={(e) => setSubject(e.target.value)}
+                  style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: '1rem', width: '100%' }}
+                />
+              </div>
+              <button className="btn-primary search-btn" onClick={handleSearch}><i className="ri-search-line"></i> Find Tutor</button>
             </div>
-            <button className="btn-primary search-btn" onClick={handleSearch}><i className="ri-search-line"></i> Find Tutor</button>
-          </div>
+          )}
         </div>
         <div className="hero-image">
           <img src={heroTutorImg} alt="Home Tutoring" />
@@ -68,25 +76,47 @@ function Home() {
 
       <section className="how-it-works" id="how-it-works">
         <div className="section-header">
-          <h2>How Tutrly Works</h2>
-          <p>Your journey to academic excellence in three simple steps</p>
+          <h2>How Tutrly Works {isTutor ? 'for Tutors' : ''}</h2>
+          <p>{isTutor ? 'Start earning by teaching students in your area' : 'Your journey to academic excellence in three simple steps'}</p>
         </div>
         <div className="steps-container">
-          <div className="step-card">
-            <div className="step-icon"><i className="ri-search-eye-line"></i><div className="step-number">1</div></div>
-            <h3>Search & Filter</h3>
-            <p>Find the perfect tutor based on class, subject, and your location.</p>
-          </div>
-          <div className="step-card">
-            <div className="step-icon"><i className="ri-calendar-check-line"></i><div className="step-number">2</div></div>
-            <h3>Book a Demo</h3>
-            <p>Schedule a free demo class to ensure the perfect student-tutor match.</p>
-          </div>
-          <div className="step-card">
-            <div className="step-icon"><i className="ri-line-chart-line"></i><div className="step-number">3</div></div>
-            <h3>Start Learning</h3>
-            <p>Begin personalized home tuition and track progress regularly.</p>
-          </div>
+          {isTutor ? (
+            <>
+              <div className="step-card">
+                <div className="step-icon"><i className="ri-profile-line"></i><div className="step-number">1</div></div>
+                <h3>Create Profile</h3>
+                <p>Set up your subjects, class levels, and weekly availability schedule.</p>
+              </div>
+              <div className="step-card">
+                <div className="step-icon"><i className="ri-check-double-line"></i><div className="step-number">2</div></div>
+                <h3>Accept Demos</h3>
+                <p>Receive booking requests from parents and accept the ones that fit your schedule.</p>
+              </div>
+              <div className="step-card">
+                <div className="step-icon"><i className="ri-money-dollar-circle-line"></i><div className="step-number">3</div></div>
+                <h3>Teach & Earn</h3>
+                <p>Provide high-quality education, get great ratings, and grow your income.</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="step-card">
+                <div className="step-icon"><i className="ri-search-eye-line"></i><div className="step-number">1</div></div>
+                <h3>Search & Filter</h3>
+                <p>Find the perfect tutor based on class, subject, and your location.</p>
+              </div>
+              <div className="step-card">
+                <div className="step-icon"><i className="ri-calendar-check-line"></i><div className="step-number">2</div></div>
+                <h3>Book a Demo</h3>
+                <p>Schedule a free demo class to ensure the perfect student-tutor match.</p>
+              </div>
+              <div className="step-card">
+                <div className="step-icon"><i className="ri-line-chart-line"></i><div className="step-number">3</div></div>
+                <h3>Start Learning</h3>
+                <p>Begin personalized home tuition and track progress regularly.</p>
+              </div>
+            </>
+          )}
         </div>
       </section>
 
