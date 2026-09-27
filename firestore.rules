@@ -1,0 +1,56 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Function to check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Function to check if the user is an admin
+    // Note: Since we are storing role in the document, we have to read it.
+    // In a production app, Custom Claims are preferred, but this works for now.
+    function isAdmin() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      // Anyone can read verified tutors (for search)
+      // Users can read their own profile
+      // Admins can read all profiles
+      allow read: if (resource.data.role == 'tutor' && resource.data.isVerified == true) 
+                  || (isAuthenticated() && request.auth.uid == userId) 
+                  || isAdmin();
+                  
+      // Users can create their own profile
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Users can update their own profile (but not change role or isVerified unless they are admin)
+      // Admins can update any profile
+      allow update: if (isAuthenticated() && request.auth.uid == userId && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isVerified']))
+                    || isAdmin();
+                    
+      // Only admins can delete users
+      allow delete: if isAdmin();
+    }
+    
+    // Bookings Collection
+    match /bookings/{bookingId} {
+      // Users can read their own bookings (as parent or tutor)
+      // Admins can read all bookings
+      allow read: if (isAuthenticated() && (resource.data.parentId == request.auth.uid || resource.data.tutorId == request.auth.uid))
+                  || isAdmin();
+                  
+      // Only parents can create bookings
+      allow create: if isAuthenticated() && request.resource.data.parentId == request.auth.uid && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'parent';
+      
+      // Tutor can accept/cancel, Parent can rate/cancel
+      allow update: if isAuthenticated() && (resource.data.parentId == request.auth.uid || resource.data.tutorId == request.auth.uid)
+                    || isAdmin();
+                    
+      allow delete: if isAdmin();
+    }
+  }
+}
