@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { auth, db } from '../firebase';
 import { doc, setDoc } from 'firebase/firestore';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './Login.css';
 
@@ -14,12 +14,30 @@ function Login() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const handleResetPassword = async () => {
+    if (!email) {
+      setError('Please enter your email address first.');
+      return;
+    }
+    try {
+      setLoading(true);
+      await sendPasswordResetEmail(auth, email);
+      setMessage('Password reset email sent! Check your inbox.');
+      setError('');
+    } catch (err) {
+      setError(err.message.replace('Firebase: ', ''));
+    }
+    setLoading(false);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setMessage('');
     setLoading(true);
 
     try {
@@ -66,6 +84,7 @@ function Login() {
         </div>
         
         {error && <div className="error-message" style={{ color: 'red', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
+        {message && <div className="success-message" style={{ color: '#10b981', marginBottom: '1rem', textAlign: 'center' }}>{message}</div>}
 
         <form className="login-form" onSubmit={handleSubmit}>
           {!isLogin && (
@@ -81,7 +100,18 @@ function Login() {
           </div>
           
           <div className="form-group">
-            <label>Password</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label>Password</label>
+              {isLogin && (
+                <button 
+                  type="button" 
+                  onClick={handleResetPassword} 
+                  style={{ background: 'none', border: 'none', color: '#4F46E5', fontSize: '0.85rem', cursor: 'pointer', padding: 0 }}
+                >
+                  Forgot Password?
+                </button>
+              )}
+            </div>
             <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={isLogin ? "6" : "8"} />
           </div>
 
@@ -126,7 +156,7 @@ function Login() {
         <div className="login-footer">
           <p>
             {isLogin ? "Don't have an account? " : "Already have an account? "}
-            <span className="toggle-link" onClick={() => { setIsLogin(!isLogin); setError(''); }}>
+            <span className="toggle-link" onClick={() => { setIsLogin(!isLogin); setError(''); setMessage(''); }}>
               {isLogin ? 'Sign up' : 'Log in'}
             </span>
           </p>

@@ -11,6 +11,7 @@ import Search from './pages/Search';
 import BookDemo from './pages/BookDemo';
 import TutorProfile from './pages/TutorProfile';
 import AdminDashboard from './pages/AdminDashboard';
+import NotFound from './pages/NotFound';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './App.css';
 
@@ -68,6 +69,7 @@ function App() {
               </ProtectedRoute>
             } 
           />
+          <Route path="*" element={<NotFound />} />
         </Routes>
         <Footer />
       </Router>

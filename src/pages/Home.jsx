@@ -21,8 +21,8 @@ function Home() {
       <header className="hero" id="home">
         <div className="hero-content">
           <span className="badge">Classes 1 to 10</span>
-          <h1>Unlock Your Child's Full <span className="highlight">Potential</span></h1>
-          <p>Connect with expert home tutors tailored to your child's learning style. Personalized education right at your doorstep.</p>
+          <h1>{isTutor ? 'Grow Your Teaching ' : 'Unlock Your Child\'s Full '}<span className="highlight">{isTutor ? 'Career' : 'Potential'}</span></h1>
+          <p>{isTutor ? 'Connect with students in your area and manage your classes all in one place.' : 'Connect with expert home tutors tailored to your child\'s learning style. Personalized education right at your doorstep.'}</p>
           
           {isTutor ? (
             <div style={{ marginTop: '2rem' }}>
