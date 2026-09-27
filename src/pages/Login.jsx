@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { auth, db } from '../firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './Login.css';
@@ -42,7 +42,18 @@ function Login() {
 
     try {
       if (isLogin) {
-        await signInWithEmailAndPassword(auth, email, password);
+        // Existing user login
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        
+        // Check if profile is complete to decide redirect
+        const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+        const data = userDoc.data();
+        
+        if (data && data.profileComplete) {
+          navigate('/');
+        } else {
+          navigate('/setup-profile');
+        }
       } else {
         if (password.length < 8) {
           throw new Error("Password must be at least 8 characters long.");
@@ -53,21 +64,23 @@ function Login() {
         
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         
-        // Save user profile to Firestore
+        // Save user profile to Firestore with profileComplete: false
         await setDoc(doc(db, 'users', userCredential.user.uid), {
           name: name,
           email: email,
           role: role,
           createdAt: new Date().toISOString(),
           isVerified: role === 'parent', // Parents are verified by default, tutors need approval
-          // Optional tutor fields that can be filled out later
+          profileComplete: false,
           subjects: [],
           classLevels: [],
           bio: '',
           hourlyRate: 0
         });
+        
+        // New signup → go to profile setup
+        navigate('/setup-profile');
       }
-      navigate('/dashboard');
     } catch (err) {
       setError(err.message.replace('Firebase: ', ''));
     }

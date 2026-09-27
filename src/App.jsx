@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import Login from './pages/Login';
+import SetupProfile from './pages/SetupProfile';
 import Dashboard from './pages/Dashboard';
 import MyProfile from './pages/MyProfile';
 import EditProfile from './pages/EditProfile';
@@ -15,11 +16,23 @@ import NotFound from './pages/NotFound';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './App.css';
 
-// A wrapper for protected routes
+// Requires login — redirects guests to /login
 function ProtectedRoute({ children }) {
   const { currentUser } = useAuth();
   if (!currentUser) {
     return <Navigate to="/login" replace />;
+  }
+  return children;
+}
+
+// Requires admin role — redirects non-admins to home
+function AdminRoute({ children }) {
+  const { currentUser, userData } = useAuth();
+  if (!currentUser) {
+    return <Navigate to="/login" replace />;
+  }
+  if (userData && userData.role !== 'admin') {
+    return <Navigate to="/" replace />;
   }
   return children;
 }
@@ -34,9 +47,42 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/search" element={<Search />} />
-          <Route path="/tutor/:tutorId" element={<TutorProfile />} />
-          <Route path="/book/:tutorId" element={<BookDemo />} />
+          
+          {/* Setup profile — protected, for first-time users */}
+          <Route 
+            path="/setup-profile" 
+            element={
+              <ProtectedRoute>
+                <SetupProfile />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* These pages require login (guests are redirected to /login) */}
+          <Route 
+            path="/search" 
+            element={
+              <ProtectedRoute>
+                <Search />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/tutor/:tutorId" 
+            element={
+              <ProtectedRoute>
+                <TutorProfile />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/book/:tutorId" 
+            element={
+              <ProtectedRoute>
+                <BookDemo />
+              </ProtectedRoute>
+            } 
+          />
           <Route 
             path="/dashboard" 
             element={
@@ -64,9 +110,9 @@ function App() {
           <Route 
             path="/admin" 
             element={
-              <ProtectedRoute>
+              <AdminRoute>
                 <AdminDashboard />
-              </ProtectedRoute>
+              </AdminRoute>
             } 
           />
           <Route path="*" element={<NotFound />} />

@@ -49,7 +49,8 @@ function Navbar() {
         <Link to="/" onClick={(e) => smoothScroll(e, '#home')}>Home</Link>
         <Link to={isHomePage ? "/" : "/"} onClick={(e) => smoothScroll(e, '#how-it-works')}>How it Works</Link>
         
-        {userData?.role !== 'tutor' && (
+        {/* Find Tutor — only for logged-in parents, not guests or tutors */}
+        {currentUser && userData?.role !== 'tutor' && (
           <Link to={isHomePage ? "/" : "/"} onClick={(e) => smoothScroll(e, '#find-tutor')}>Find Tutor</Link>
         )}
         
