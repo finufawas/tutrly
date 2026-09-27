@@ -58,19 +58,6 @@ function Home() {
         </div>
         <div className="hero-image">
           <img src={heroTutorImg} alt="Home Tutoring" />
-          <div className="floating-card rating-card">
-            <div className="stars">
-              <i className="ri-star-fill"></i><i className="ri-star-fill"></i><i className="ri-star-fill"></i><i className="ri-star-fill"></i><i className="ri-star-fill"></i>
-            </div>
-            <p>4.9/5 Average Rating</p>
-          </div>
-          <div className="floating-card subject-card">
-            <i className="ri-function-line"></i>
-            <div>
-              <h4>Mathematics</h4>
-              <p>Expert Tutors</p>
-            </div>
-          </div>
         </div>
       </header>
 
