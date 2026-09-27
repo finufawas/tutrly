@@ -537,7 +537,10 @@ footer { background: var(--surface); margin: 0 16px 16px; border-radius: 36px; p
     .hero-copy { padding-top: 0.5rem; }
     .search-fields { grid-template-columns: 1fr 1fr; }
     .search-fields .search-field:nth-child(3) { grid-column: span 2; }
-    .hero-bento { grid-template-rows: 220px 130px auto; }
+    .hero-bento { grid-template-columns: 1fr 1fr; grid-template-rows: 280px auto auto; }
+    .hero-photo { grid-column: 1 / -1; grid-row: 1; }
+    .hero-photo img.cover { object-position: top center; }
+    .stat-tile { padding: 1.15rem; }
     .section { padding-left: 16px; padding-right: 16px; }
     .cta-tile { margin: 1rem 16px 2rem; }
 
