@@ -88,7 +88,23 @@ function Login() {
           {!isLogin && (
             <div className="form-group">
               <label>Confirm Password</label>
-              <input type="password" placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength="8" />
+              <input 
+                type="password" 
+                placeholder="••••••••" 
+                value={confirmPassword} 
+                onChange={(e) => setConfirmPassword(e.target.value)} 
+                required 
+                minLength="8" 
+                style={{ 
+                  borderColor: confirmPassword && password !== confirmPassword ? '#ef4444' : '',
+                  borderWidth: confirmPassword && password !== confirmPassword ? '2px' : '1px'
+                }}
+              />
+              {confirmPassword && password !== confirmPassword && (
+                <span style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '0.5rem', display: 'block', fontWeight: 'bold' }}>
+                  <i className="ri-error-warning-line"></i> Passwords do not match
+                </span>
+              )}
             </div>
           )}
 
