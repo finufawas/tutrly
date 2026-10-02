@@ -106,6 +106,7 @@ function BookDemo() {
         endTime: formData.endTime,
         message: formData.message,
         status: 'pending',
+        parentLocation: userData?.location || null,
         createdAt: new Date().toISOString()
       });
       alert('Class booked successfully! The tutor will contact you soon.');

@@ -6,8 +6,15 @@ import { Link } from 'react-router-dom';
 import Avatar from '../components/Avatar';
 import { formatDate, isPast, fromISO, toISO } from '../utils/tutor';
 
-const STATUS_PILL = { confirmed: 'pill-success', pending: 'pill-warning', cancelled: 'pill-danger' };
+const STATUS_PILL = { confirmed: 'pill-success', pending: 'pill-warning', cancelled: 'pill-danger', completed: 'pill-success' };
 const cap = (s = '') => s.charAt(0).toUpperCase() + s.slice(1);
+
+function getDistanceKm(lat1, lon1, lat2, lon2) {
+  const p = 0.017453292519943295;
+  const c = Math.cos;
+  const a = 0.5 - c((lat2 - lat1) * p) / 2 + c(lat1 * p) * c(lat2 * p) * (1 - c((lon2 - lon1) * p)) / 2;
+  return 12742 * Math.asin(Math.sqrt(a));
+}
 
 function Dashboard() {
   const { currentUser, userData } = useAuth();
@@ -20,6 +27,9 @@ function Dashboard() {
   const [rateBookingId, setRateBookingId] = useState(null);
   const [rating, setRating] = useState(5);
   const [review, setReview] = useState('');
+  
+  const [startingClassId, setStartingClassId] = useState(null);
+  const [stoppingClassId, setStoppingClassId] = useState(null);
 
   const fetchBookings = async () => {
     if (!currentUser || !userData) return;
@@ -63,12 +73,73 @@ function Dashboard() {
   const openCancel = (id) => { setRateBookingId(null); setCancelBookingId(id); setCancelReason(''); };
   const openRate = (id, stars = 5) => { setCancelBookingId(null); setRateBookingId(id); setRating(stars); setReview(''); };
 
+  const handleStartClass = (b) => {
+    if (!b.parentLocation || !b.parentLocation.lat) {
+      alert("The student has not provided their GPS location, so you cannot automatically track hours for this booking.");
+      return;
+    }
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+    
+    setStartingClassId(b.id);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const dist = getDistanceKm(pos.coords.latitude, pos.coords.longitude, b.parentLocation.lat, b.parentLocation.lng);
+        // Ensure tutor is within 1.0 km of the student's location
+        if (dist > 1.0) {
+          alert(`You appear to be ${dist.toFixed(1)} km away from the student's location. You must be near the student to start the class.`);
+          setStartingClassId(null);
+          return;
+        }
+        
+        try {
+          await updateDoc(doc(db, 'bookings', b.id), { actualStartTime: new Date().toISOString() });
+          fetchBookings();
+        } catch (err) {
+          console.error(err);
+          alert('Failed to start class.');
+        }
+        setStartingClassId(null);
+      },
+      (err) => {
+        alert("Failed to get your location. Please ensure location access is allowed.");
+        setStartingClassId(null);
+      },
+      { enableHighAccuracy: true }
+    );
+  };
+
+  const handleStopClass = async (b) => {
+    setStoppingClassId(b.id);
+    try {
+      await updateDoc(doc(db, 'bookings', b.id), { actualEndTime: new Date().toISOString(), status: 'completed' });
+      fetchBookings();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to stop class.');
+    }
+    setStoppingClassId(null);
+  };
+
   const pending = bookings.filter(b => b.status === 'pending');
   const upcoming = bookings.filter(b => b.status === 'confirmed' && !isPast(b.date));
   const nextClass = upcoming[0];
   const toRate = bookings.find(b => b.status === 'confirmed' && isPast(b.date) && !b.rating);
   const rated = bookings.filter(b => b.rating);
   const avgRating = rated.length ? (rated.reduce((s, b) => s + b.rating, 0) / rated.length).toFixed(1) : '—';
+  
+  const completed = bookings.filter(b => b.status === 'completed');
+  let totalHours = 0;
+  completed.forEach(b => {
+    if (b.actualStartTime && b.actualEndTime) {
+      const ms = new Date(b.actualEndTime) - new Date(b.actualStartTime);
+      totalHours += ms / 3600000;
+    }
+  });
+  const trackedHours = totalHours.toFixed(1);
+
   const firstName = (userData?.name || '').split(' ')[0] || currentUser?.email;
   const child = userData?.studentName?.split(' ')[0];
   const daysUntil = (iso) => {
@@ -133,7 +204,7 @@ function Dashboard() {
 
   // ---------------- TUTOR ----------------
   if (isTutor) {
-    const past = bookings.filter(b => b.status === 'cancelled' || (b.status === 'confirmed' && isPast(b.date)));
+    const past = bookings.filter(b => b.status === 'cancelled' || b.status === 'completed' || (b.status === 'confirmed' && isPast(b.date)));
     return (
       <div className="page dash-page">
         <div className="container">
@@ -151,7 +222,7 @@ function Dashboard() {
           <div className="stat-row">
             <div className="tile tile-peach"><p className="eyebrow">New requests</p><p className="big-num">{pending.length}</p></div>
             <div className="tile tile-mint"><p className="eyebrow">Upcoming classes</p><p className="big-num">{upcoming.length}</p></div>
-            <div className="tile tile-butter"><p className="eyebrow">Rating</p><p className="big-num">{avgRating}</p></div>
+            <div className="tile tile-butter"><p className="eyebrow">Tracked hours</p><p className="big-num">{trackedHours}h</p></div>
             <div className="tile tile-sky"><p className="eyebrow">Hourly rate</p><p className="big-num">₹{userData?.hourlyRate || 0}</p></div>
           </div>
 
@@ -194,7 +265,11 @@ function Dashboard() {
                     <div className="schedule-item">
                       <div className="date-chip"><span>{d.toLocaleDateString('en-IN', { weekday: 'short' }).toUpperCase()}</span><b>{d.getDate()}</b></div>
                       <div className="body"><p style={{ fontWeight: 800, color: 'var(--ink)' }}>{b.parentName}</p><p style={{ fontSize: '0.8rem', fontWeight: 600 }}>{b.startTime} – {b.endTime}</p></div>
-                      {cancelBookingId !== b.id && <button onClick={() => openCancel(b.id)} className="btn-soft btn-sm">Cancel</button>}
+                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        {cancelBookingId !== b.id && !b.actualStartTime && <button onClick={() => openCancel(b.id)} className="btn-soft btn-sm">Cancel</button>}
+                        {b.actualStartTime && !b.actualEndTime && <button onClick={() => handleStopClass(b)} className="btn btn-sm" disabled={stoppingClassId === b.id} style={{ background: 'var(--danger)', color: 'white', border: 'none' }}>{stoppingClassId === b.id ? 'Stopping...' : 'Stop Class'}</button>}
+                        {!b.actualStartTime && <button onClick={() => handleStartClass(b)} className="btn btn-sm" disabled={startingClassId === b.id} style={{ background: 'var(--success)', color: 'white', border: 'none' }}>{startingClassId === b.id ? 'Checking Location...' : 'Start Class'}</button>}
+                      </div>
                     </div>
                     {cancelBookingId === b.id && <div style={{ marginTop: 8 }}>{renderCancelForm(b)}</div>}
                   </div>
