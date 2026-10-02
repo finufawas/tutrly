@@ -14,6 +14,7 @@ function Login() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -58,7 +59,7 @@ function Login() {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         
         await setDoc(doc(db, 'users', cred.user.uid), {
-          name, email, role,
+          name, email, phone, role,
           createdAt: new Date().toISOString(),
           isVerified: role === 'parent', // Parents are verified by default, tutors need approval
           profileComplete: false,
@@ -72,6 +73,7 @@ function Login() {
         setIsLogin(true);
         setPassword('');
         setConfirmPassword('');
+        setPhone('');
       }
     } catch (err) {
       setError(err.message.replace('Firebase: ', ''));
@@ -125,6 +127,9 @@ function Login() {
 
           {!isLogin && (
             <div><label className="field-label">Full Name</label><input className="input" type="text" placeholder="John Doe" value={name} onChange={(e) => setName(e.target.value)} required /></div>
+          )}
+          {!isLogin && (
+            <div><label className="field-label">Phone Number</label><input className="input" type="tel" placeholder="+91 9876543210" value={phone} onChange={(e) => setPhone(e.target.value)} required /></div>
           )}
           <div><label className="field-label">Email Address</label><input className="input" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
           <div>
