@@ -180,21 +180,23 @@ function EditProfile() {
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Profile Picture</label>
             {formData.photoURL && <img src={formData.photoURL} alt="Profile" style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', marginBottom: '1rem' }} />}
             <input 
+              className="input"
               type="file" 
               accept="image/*"
               onChange={handleImageChange}
-              style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)' }}
+              style={{ padding: '0.75rem 1.25rem', height: 'auto' }}
             />
           </div>
 
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Full Name</label>
             <input 
+              className="input"
               type="text" 
               value={formData.name}
               onChange={(e) => setFormData({...formData, name: e.target.value})}
               required
-              style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)' }}
+              style={{ width: '100%' }}
             />
           </div>
 
@@ -203,23 +205,25 @@ function EditProfile() {
               <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Hourly Rate (₹)</label>
                 <input 
+                  className="input"
                   type="number" 
                   value={formData.hourlyRate}
                   onChange={(e) => setFormData({...formData, hourlyRate: e.target.value})}
                   required
                   min="0"
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)' }}
+                  style={{ width: '100%' }}
                 />
               </div>
 
               <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Professional Bio</label>
                 <textarea 
+                  className="textarea"
                   value={formData.bio}
                   onChange={(e) => setFormData({...formData, bio: e.target.value})}
                   rows="4"
                   placeholder="Tell parents about your experience and teaching style..."
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)' }}
+                  style={{ width: '100%' }}
                 ></textarea>
               </div>
 
@@ -251,11 +255,12 @@ function EditProfile() {
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <input 
+                    className="input"
                     type="text" 
                     value={subjectInput}
                     onChange={(e) => setSubjectInput(e.target.value)}
                     placeholder="e.g. Mathematics"
-                    style={{ flex: 1, padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)' }}
+                    style={{ flex: 1 }}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSubject(e); } }}
                   />
                   <button type="button" onClick={handleAddSubject} className="btn-secondary">Add</button>
@@ -286,17 +291,17 @@ function EditProfile() {
                 <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
                   <div style={{ flex: '1', minWidth: '120px' }}>
                     <label style={{ fontSize: '0.8rem', color: 'var(--text-light)', display: 'block', marginBottom: '0.2rem' }}>Day</label>
-                    <select value={newSlot.day} onChange={(e) => setNewSlot({...newSlot, day: e.target.value})} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid var(--border-color)' }}>
+                    <select className="select" value={newSlot.day} onChange={(e) => setNewSlot({...newSlot, day: e.target.value})} style={{ width: '100%' }}>
                       {daysOfWeek.map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                   </div>
                   <div style={{ flex: '1', minWidth: '120px' }}>
                     <label style={{ fontSize: '0.8rem', color: 'var(--text-light)', display: 'block', marginBottom: '0.2rem' }}>Start Time</label>
-                    <input type="time" value={newSlot.start} onChange={(e) => setNewSlot({...newSlot, start: e.target.value})} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid var(--border-color)' }} />
+                    <input className="input" type="time" value={newSlot.start} onChange={(e) => setNewSlot({...newSlot, start: e.target.value})} style={{ width: '100%' }} />
                   </div>
                   <div style={{ flex: '1', minWidth: '120px' }}>
                     <label style={{ fontSize: '0.8rem', color: 'var(--text-light)', display: 'block', marginBottom: '0.2rem' }}>End Time</label>
-                    <input type="time" value={newSlot.end} onChange={(e) => setNewSlot({...newSlot, end: e.target.value})} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid var(--border-color)' }} />
+                    <input className="input" type="time" value={newSlot.end} onChange={(e) => setNewSlot({...newSlot, end: e.target.value})} style={{ width: '100%' }} />
                   </div>
                   <button type="button" onClick={handleAddSlot} className="btn-secondary" style={{ padding: '0.5rem 1rem' }}>Add Slot</button>
                 </div>
