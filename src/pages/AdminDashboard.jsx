@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { db } from '../firebase';
+import { auth, db } from '../firebase';
+import { signOut } from 'firebase/auth';
 import { collection, query, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 
@@ -61,6 +62,26 @@ function AdminDashboard() {
     }
   };
 
+  const handleToggleAdmin = async (userId, isAdmin) => {
+    if (!window.confirm(`Are you sure you want to ${isAdmin ? 'promote' : 'demote'} this user to Admin?`)) return;
+    try {
+      await updateDoc(doc(db, 'users', userId), { role: isAdmin ? 'admin' : 'parent' });
+      fetchData();
+      if (selectedUser && selectedUser.id === userId) setSelectedUser(null);
+    } catch (err) {
+      alert("Failed to change user role.");
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      navigate('/');
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleRemove = async (userId) => {
     if (!window.confirm("Are you sure you want to permanently delete this user? This cannot be undone.")) return;
     try {
@@ -78,6 +99,7 @@ function AdminDashboard() {
 
   const tutors = users.filter(u => u.role === 'tutor');
   const parents = users.filter(u => u.role === 'parent');
+  const admins = users.filter(u => u.role === 'admin');
   const pendingTutors = tutors.filter(t => !t.isVerified && !t.isSuspended);
 
   // Calculate total tracked hours
@@ -112,8 +134,16 @@ function AdminDashboard() {
         <button onClick={() => setActiveTab('parents')} style={sidebarBtn(activeTab === 'parents')}>
           <i className="ri-parent-line"></i> Students & Parents ({parents.length})
         </button>
+        <button onClick={() => setActiveTab('admins')} style={sidebarBtn(activeTab === 'admins')}>
+          <i className="ri-shield-user-line"></i> Admins ({admins.length})
+        </button>
         <button onClick={() => setActiveTab('bookings')} style={sidebarBtn(activeTab === 'bookings')}>
           <i className="ri-calendar-event-line"></i> Bookings ({bookings.length})
+        </button>
+        
+        <div style={{ flex: 1 }}></div>
+        <button onClick={handleSignOut} style={{ ...sidebarBtn(false), color: '#ef4444', marginTop: 'auto' }}>
+          <i className="ri-logout-box-r-line"></i> Sign Out
         </button>
       </div>
 
@@ -219,6 +249,34 @@ function AdminDashboard() {
           </div>
         )}
 
+        {activeTab === 'admins' && (
+          <div>
+            <h1 style={{ fontSize: '2rem', marginBottom: '2rem', color: '#0f172a', fontWeight: 800 }}>Manage Admins</h1>
+            <div style={{ background: 'white', borderRadius: '1rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                    <th style={thStyle}>Admin Name</th>
+                    <th style={thStyle}>Email</th>
+                    <th style={thStyle}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {admins.map(a => (
+                    <tr key={a.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={tdStyle}><b>{a.name || 'Admin'}</b></td>
+                      <td style={tdStyle}>{a.email}</td>
+                      <td style={tdStyle}>
+                        <button onClick={() => setSelectedUser(a)} style={actionBtn('#3b82f6')}>View Details</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'bookings' && (
           <div>
             <h1 style={{ fontSize: '2rem', marginBottom: '2rem', color: '#0f172a', fontWeight: 800 }}>Platform Bookings</h1>
@@ -300,13 +358,23 @@ function AdminDashboard() {
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: '1rem', paddingTop: '1.5rem', borderTop: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', gap: '1rem', paddingTop: '1.5rem', borderTop: '1px solid #e2e8f0', flexWrap: 'wrap' }}>
               {selectedUser.role === 'tutor' && !selectedUser.isVerified && !selectedUser.isSuspended && (
                 <button onClick={() => handleApprove(selectedUser.id)} style={{ flex: 1, padding: '0.8rem', background: '#10b981', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' }}><i className="ri-check-line"></i> Approve Tutor</button>
               )}
               {selectedUser.role !== 'admin' && (
-                <button onClick={() => handleSuspend(selectedUser.id, !selectedUser.isSuspended)} style={{ flex: 1, padding: '0.8rem', background: selectedUser.isSuspended ? '#3b82f6' : '#f59e0b', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' }}>
-                  {selectedUser.isSuspended ? <><i className="ri-play-circle-line"></i> Reactivate Account</> : <><i className="ri-pause-circle-line"></i> Suspend Account</>}
+                <>
+                  <button onClick={() => handleToggleAdmin(selectedUser.id, true)} style={{ flex: 1, padding: '0.8rem', background: '#8b5cf6', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' }}>
+                    <i className="ri-shield-star-line"></i> Promote to Admin
+                  </button>
+                  <button onClick={() => handleSuspend(selectedUser.id, !selectedUser.isSuspended)} style={{ flex: 1, padding: '0.8rem', background: selectedUser.isSuspended ? '#3b82f6' : '#f59e0b', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' }}>
+                    {selectedUser.isSuspended ? <><i className="ri-play-circle-line"></i> Reactivate</> : <><i className="ri-pause-circle-line"></i> Suspend</>}
+                  </button>
+                </>
+              )}
+              {selectedUser.role === 'admin' && userData?.email !== selectedUser.email && (
+                <button onClick={() => handleToggleAdmin(selectedUser.id, false)} style={{ flex: 1, padding: '0.8rem', background: '#f59e0b', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' }}>
+                  <i className="ri-user-down-line"></i> Demote Admin
                 </button>
               )}
               <button onClick={() => handleRemove(selectedUser.id)} style={{ padding: '0.8rem 1.2rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' }} title="Delete Permanently"><i className="ri-delete-bin-line"></i></button>
