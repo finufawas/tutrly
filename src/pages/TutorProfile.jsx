@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import Avatar from '../components/Avatar';
-import { DAYS, classRange, nextOpenSlots, toISO, slotsFor } from '../utils/tutor';
+import { DAYS, classRange, nextOpenSlots, toISO, slotsFor, to12h } from '../utils/tutor';
 
 function TutorProfile() {
   const { tutorId } = useParams();
@@ -62,7 +62,7 @@ function TutorProfile() {
       <span className="big">₹{tutor.hourlyRate || 0}</span>
       {nextSlots.length > 0 && (
         <div className="slot-chips">
-          {nextSlots.map(s => <Link key={s.iso + s.start} to={slotLink(s)} className="slot-chip">{s.label} {s.start}</Link>)}
+          {nextSlots.map(s => <Link key={s.iso + s.start} to={slotLink(s)} className="slot-chip">{s.label} {to12h(s.start)}</Link>)}
         </div>
       )}
       {isTutorViewer ? (
@@ -123,7 +123,7 @@ function TutorProfile() {
                     return (
                       <div key={day} className="slot-list-row">
                         <b>{day}</b>
-                        <div className="chip-row" style={{ gap: '0.3rem' }}>{slots.map((s, i) => <span key={i}>{s.start} - {s.end}</span>)}</div>
+                        <div className="chip-row" style={{ gap: '0.3rem' }}>{slots.map((s, i) => <span key={i}>{to12h(s.start)} - {to12h(s.end)}</span>)}</div>
                       </div>
                     );
                   })}
@@ -155,7 +155,7 @@ function TutorProfile() {
         <div className="mobile-cta">
           <div className="grow">
             <span className="price">₹{tutor.hourlyRate || 0}<small>/hr</small></span>
-            {nextSlots[0] && <p>Next: {nextSlots[0].label} {nextSlots[0].start}</p>}
+            {nextSlots[0] && <p>Next: {nextSlots[0].label} {to12h(nextSlots[0].start)}</p>}
           </div>
           <Link to={`/book/${tutor.id}`} className="btn-on-ink">Book a Class</Link>
         </div>

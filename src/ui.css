@@ -317,3 +317,84 @@ body.no-scroll { overflow: hidden; }
     .nf-tile { padding: 32px 16px; border-radius: 30px; }
     .footer-pill { border-radius: 24px; padding: 14px 16px; }
 }
+
+
+/* ============ EDIT PROFILE · EB (section tabs) ============ */
+.eb-wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.eb-head { display: flex; align-items: center; gap: 18px; }
+.eb-head h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); }
+.eb-head p { margin: 6px 0 0; font-weight: 600; }
+.eb-ring { width: 84px; height: 84px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; }
+.eb-ring span { width: 68px; height: 68px; border-radius: 50%; background: var(--bg); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem; color: var(--ink); }
+.eb-tabs { display: flex; gap: 4px; padding: 5px; border-radius: 999px; background: var(--surface); align-self: flex-start; max-width: 100%; overflow-x: auto; }
+.eb-tabs button { flex: none; height: 44px; padding: 0 18px; border: none; border-radius: 999px; background: none; font-weight: 700; font-size: 0.9rem; color: var(--ink); display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.eb-tabs button.active { background: var(--btn-bg); color: var(--btn-fg); }
+.eb-tabs .ok { color: var(--success); } .eb-tabs .todo { color: var(--warning); }
+.eb-tabs button.active .ok, .eb-tabs button.active .todo { color: #C9BDFF; }
+.eb-progress { display: none; }
+.eb-card { border-radius: 36px; background: var(--surface); padding: 28px; display: flex; flex-direction: column; gap: 18px; }
+.eb-card h2 { font-size: clamp(1.5rem, 3vw, 1.9rem); }
+.eb-card h2 + p { margin: 4px 0 0; font-weight: 600; }
+.eb-basics { display: grid; grid-template-columns: 140px 1fr; gap: 24px; align-items: start; }
+.eb-fields { display: flex; flex-direction: column; gap: 14px; }
+.eb-rate { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 14px; align-items: stretch; }
+.eb-rate-input { height: 88px; border-radius: 24px; background: var(--surface-2); display: flex; align-items: center; gap: 8px; padding: 0 22px; box-shadow: inset 0 0 0 2px var(--accent); }
+.eb-rate-input span { font-size: 2rem; font-weight: 800; color: var(--muted); }
+.eb-rate-input input { flex: 1; min-width: 0; border: none; background: none; outline: none; font-size: 2.4rem; font-weight: 800; letter-spacing: -0.05em; }
+.eb-rate-input small { font-weight: 700; color: var(--muted); }
+.eb-breakdown { border-radius: 24px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; }
+.eb-breakdown div { display: flex; justify-content: space-between; font-size: 0.925rem; font-weight: 700; color: var(--mint-ink); }
+.eb-breakdown .total { border-top: 1px solid var(--line); padding-top: 8px; font-size: 1.1rem; font-weight: 800; color: var(--ink); }
+.eb-days { display: none; }
+.eb-week { display: flex; flex-direction: column; gap: 6px; }
+.eb-row { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 20px; cursor: pointer; }
+.eb-row.current { background: var(--surface-2); box-shadow: inset 0 0 0 2px var(--accent); }
+.eb-row > b { width: 46px; flex: none; font-size: 0.9rem; color: var(--ink); }
+.eb-ranges { flex: 1; min-width: 0; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.eb-range { height: 38px; padding: 0 6px 0 14px; border-radius: 999px; background: var(--lilac); font-size: 0.82rem; font-weight: 700; color: var(--ink); display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.eb-range.locked { background: var(--peach); }
+.eb-range button { width: 28px; height: 28px; border: none; border-radius: 50%; background: none; cursor: pointer; color: var(--muted); display: flex; align-items: center; justify-content: center; }
+.eb-off { font-size: 0.82rem; font-weight: 600; color: var(--faint); }
+.eb-draft { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.eb-draft .select { width: auto; height: 40px; padding: 0 12px; background: var(--surface); box-shadow: inset 0 0 0 2px var(--accent); font-weight: 800; font-size: 0.875rem; }
+.eb-dur { font-size: 0.75rem; font-weight: 800; color: var(--success); }
+.eb-add { height: 36px; flex: none; color: var(--accent-text); }
+.eb-legend { display: flex; gap: 18px; font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+.eb-legend span { display: flex; gap: 6px; align-items: center; }
+.eb-legend i { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+.eb-foot { display: flex; justify-content: space-between; gap: 8px; }
+.eb-foot-right { display: flex; gap: 8px; }
+
+@media (max-width: 768px) {
+    .eb-wrap { gap: 12px; padding-bottom: 84px; }
+    .eb-head { gap: 12px; }
+    .eb-ring { width: 56px; height: 56px; } .eb-ring span { width: 44px; height: 44px; font-size: 0.8rem; }
+    .eb-head .btn-light { width: 44px; height: 44px; padding: 0; border-radius: 50%; }
+    .hide-sm { display: none; }
+    .eb-tabs { display: none; }
+    .eb-progress { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; }
+    .eb-progress span { height: 6px; border-radius: 3px; background: var(--line); }
+    .eb-progress span.past { background: var(--btn-bg); } .eb-progress span.now { background: var(--accent); }
+    .eb-card { padding: 16px; border-radius: 24px; gap: 14px; }
+    .eb-basics, .eb-rate { grid-template-columns: 1fr; }
+    .eb-basics .photo-edit { margin: 0 auto; }
+    .eb-days { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+    .eb-day { flex: none; width: 48px; height: 58px; border: none; border-radius: 16px; background: var(--surface-2); color: var(--muted); font-weight: 800; font-size: 0.75rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; }
+    .eb-day .dot { width: 6px; height: 6px; border-radius: 50%; background: transparent; }
+    .eb-day.has { color: var(--ink); } .eb-day.has .dot { background: var(--accent); }
+    .eb-day.active { background: var(--btn-bg); color: var(--btn-fg); } .eb-day.active .dot { background: #7EDCA8; }
+    .eb-row { display: none; }
+    .eb-row.current { display: flex; flex-direction: column; align-items: stretch; background: none; box-shadow: none; padding: 0; }
+    .eb-row.current > b { display: none; }
+    .eb-ranges { flex-direction: column; align-items: stretch; }
+    .eb-range { height: 52px; justify-content: space-between; border-radius: 16px; font-size: 0.95rem; }
+    .eb-off { padding: 8px 2px; }
+    .eb-draft { background: var(--surface-2); border-radius: 16px; padding: 10px; }
+    .eb-draft .select { flex: 1; }
+    .eb-add { height: 50px; border-radius: 16px; width: 100%; }
+    .eb-foot { position: fixed; left: 16px; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 900; }
+    .eb-foot > .btn-light { width: 56px; padding: 0; flex: none; }
+    .eb-foot-right { flex: 1; } .eb-foot-right .btn { flex: 1; }
+    body.has-bottom-nav .eb-foot { bottom: calc(96px + env(safe-area-inset-bottom)); }
+    body.has-bottom-nav .eb-wrap { padding-bottom: 150px; }
+}

@@ -5,7 +5,7 @@ import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/fire
 import { Link } from 'react-router-dom';
 import Avatar from '../components/Avatar';
 import { useFeedback } from '../components/Feedback';
-import { formatDate, isPast, fromISO, toISO } from '../utils/tutor';
+import { formatDate, isPast, fromISO, toISO, to12h } from '../utils/tutor';
 import { fetchFeeSettings, effectiveFee } from '../utils/fees';
 
 const STATUS_PILL = { confirmed: 'pill-success', pending: 'pill-warning', cancelled: 'pill-danger', completed: 'pill-success' };
@@ -79,7 +79,7 @@ function GpsCheckIn({ booking, onClose, onStarted }) {
           </h3>
           <p>
             {phase === 'checking' && `You need to be within ${GPS_RADIUS_KM} km of the student's home.`}
-            {phase === 'ok' && `${dist?.toFixed(1)} km away · ${booking.startTime} – ${booking.endTime}`}
+            {phase === 'ok' && `${dist?.toFixed(1)} km away · ${to12h(booking.startTime)} – ${to12h(booking.endTime)}`}
             {phase === 'far' && "Move closer to the student's home to start the class."}
             {phase === 'error' && msg}
           </p>
@@ -147,7 +147,7 @@ function Dashboard() {
     const reason = await confirm({
       tone: 'danger',
       title: decline ? 'Decline this request?' : 'Cancel this class?',
-      message: `${formatDate(b.date)} · ${b.startTime} with ${who}`,
+      message: `${formatDate(b.date)} · ${to12h(b.startTime)} with ${who}`,
       input: { type: 'textarea', label: 'Reason (minimum 10 words)', minWords: 10, placeholder: `Let ${who?.split(' ')[0] || 'them'} know why…` },
       cancelText: decline ? 'Back' : 'Keep class',
       confirmText: decline ? 'Decline' : 'Cancel class'
@@ -299,7 +299,7 @@ function Dashboard() {
                 <div className="live-info">
                   <span className="badge-live">● LIVE · GPS verified</span>
                   <h3>{live.parentName}</h3>
-                  <p>Started {new Date(live.actualStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · planned until {live.endTime}</p>
+                  <p>Started {new Date(live.actualStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · planned until {to12h(live.endTime)}</p>
                 </div>
                 <button className="btn btn-stop" disabled={stoppingClassId === live.id} onClick={() => handleStopClass(live)}>
                   <i className="ri-stop-fill"></i>{stoppingClassId === live.id ? 'Stopping…' : 'Stop class'}
@@ -311,7 +311,7 @@ function Dashboard() {
                 {nextClass ? (
                   <>
                     <h3>{nextClass.parentName}</h3>
-                    <p style={{ fontWeight: 600, margin: 0 }}>{formatDate(nextClass.date)} · {nextClass.startTime} – {nextClass.endTime}</p>
+                    <p style={{ fontWeight: 600, margin: 0 }}>{formatDate(nextClass.date)} · {to12h(nextClass.startTime)} – {to12h(nextClass.endTime)}</p>
                   </>
                 ) : <p style={{ fontWeight: 600, margin: 0 }}>No upcoming classes yet.</p>}
               </div>
@@ -341,7 +341,7 @@ function Dashboard() {
                         <Avatar user={{ name: b.parentName }} size={52} radius={18} />
                         <div className="body">
                           <p className="who">{b.parentName}</p>
-                          <p style={{ fontSize: '0.85rem', fontWeight: 600 }}>{formatDate(b.date)} · {b.startTime} – {b.endTime}</p>
+                          <p style={{ fontSize: '0.85rem', fontWeight: 600 }}>{formatDate(b.date)} · {to12h(b.startTime)} – {to12h(b.endTime)}</p>
                           {b.message && <p className="row-note">"{b.message}"</p>}
                         </div>
                         <div className="row-actions">
@@ -362,7 +362,7 @@ function Dashboard() {
                     <div className="date-chip"><span>{d.toLocaleDateString('en-IN', { weekday: 'short' }).toUpperCase()}</span><b>{d.getDate()}</b></div>
                     <div className="body">
                       <p style={{ fontWeight: 800, color: 'var(--ink)' }}>{b.parentName}</p>
-                      <p style={{ fontSize: '0.8rem', fontWeight: 600 }}>{b.startTime} – {b.endTime} · <span className={`gps-tag ${hasGps ? 'on' : 'off'}`}><i className={hasGps ? 'ri-map-pin-line' : 'ri-map-pin-off-line'}></i> {hasGps ? 'GPS saved' : 'No GPS · timer off'}</span></p>
+                      <p style={{ fontSize: '0.8rem', fontWeight: 600 }}>{to12h(b.startTime)} – {to12h(b.endTime)} · <span className={`gps-tag ${hasGps ? 'on' : 'off'}`}><i className={hasGps ? 'ri-map-pin-line' : 'ri-map-pin-off-line'}></i> {hasGps ? 'GPS saved' : 'No GPS · timer off'}</span></p>
                     </div>
                     <div className="row-actions">
                       <button onClick={() => cancelBooking(b)} className="btn-light btn-sm">Cancel</button>
@@ -392,7 +392,7 @@ function Dashboard() {
                   <div className="list-row">
                     <Avatar user={{ name: b.parentName }} size={50} radius={16} />
                     <div><p className="t">{b.parentName}</p></div>
-                    <span className="when">{formatDate(b.date)} · {b.startTime}</span>
+                    <span className="when">{formatDate(b.date)} · {to12h(b.startTime)}</span>
                     <span className="status"><span className={`pill ${STATUS_PILL[b.status] || 'pill-muted'}`}>{b.status === 'confirmed' ? 'Not tracked' : cap(b.status)}</span></span>
                     <span className="row-actions">{b.rating ? <span className="row-stars">{b.rating} ★</span> : <span className="muted">—</span>}</span>
                   </div>
@@ -422,7 +422,7 @@ function Dashboard() {
               <div className="info">
                 <div>
                   <span className="dot-badge">● Confirmed · {daysUntil(nextClass.date)}</span>
-                  <p className="when" style={{ marginTop: '0.8rem', color: 'var(--ink)' }}>{formatDate(nextClass.date)}<br />{nextClass.startTime} – {nextClass.endTime}</p>
+                  <p className="when" style={{ marginTop: '0.8rem', color: 'var(--ink)' }}>{formatDate(nextClass.date)}<br />{to12h(nextClass.startTime)} – {to12h(nextClass.endTime)}</p>
                   <p className="who" style={{ marginTop: '0.4rem' }}>{nextClass.tutorName} · at home</p>
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -447,7 +447,7 @@ function Dashboard() {
               {rateBookingId === toRate.id ? renderRateForm(toRate) : (
                 <>
                   {renderStars(0, (s) => openRate(toRate.id, s))}
-                  <p style={{ fontWeight: 700, fontSize: '0.85rem' }}>{formatDate(toRate.date)} · {toRate.startTime}</p>
+                  <p style={{ fontWeight: 700, fontSize: '0.85rem' }}>{formatDate(toRate.date)} · {to12h(toRate.startTime)}</p>
                 </>
               )}
             </div>
@@ -478,7 +478,7 @@ function Dashboard() {
                 <div className="list-row">
                   <Avatar user={{ name: b.tutorName }} size={56} radius={18} />
                   <div><Link to={`/tutor/${b.tutorId}`} className="t">{b.tutorName}</Link></div>
-                  <span className="when">{formatDate(b.date)} · {b.startTime} – {b.endTime}</span>
+                  <span className="when">{formatDate(b.date)} · {to12h(b.startTime)} – {to12h(b.endTime)}</span>
                   <span className="status"><span className={`pill ${STATUS_PILL[b.status] || 'pill-muted'}`}>{cap(b.status)}</span></span>
                   <span className="row-actions">
                     {(b.status === 'completed' || (b.status === 'confirmed' && isPast(b.date))) && !b.rating && rateBookingId !== b.id && (

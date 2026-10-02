@@ -77,3 +77,10 @@ export const nextOpenSlots = (availability = {}, count = 3, days = 14) => {
 export const slotsFor = (availability = {}, iso) => sortedSlots(availability[weekdayOf(iso)]);
 
 export const overlaps = (slot, booked = []) => booked.some(b => slot.start < b.end && slot.end > b.start);
+
+// "16:30" -> "4:30 PM" (display only; data stays 24h)
+export const to12h = (t = '') => {
+  const [h, m] = String(t).split(':').map(Number);
+  if (isNaN(h) || isNaN(m)) return t;
+  return `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
+};

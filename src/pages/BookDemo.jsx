@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
 import { doc, getDoc, collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import Avatar from '../components/Avatar';
-import { toISO, fromISO, weekdayOf, formatDate, slotsFor, overlaps, classRange } from '../utils/tutor';
+import { toISO, fromISO, weekdayOf, formatDate, slotsFor, overlaps, classRange, to12h } from '../utils/tutor';
 
 const WINDOW_DAYS = 28;
 const PAGE = 7;
@@ -180,7 +180,7 @@ function BookDemo() {
                         onClick={() => setFormData({ ...formData, startTime: slot.start, endTime: slot.end })}
                         title={isBooked ? 'This slot is already booked' : ''}
                       >
-                        {slot.start} – {slot.end}
+                        {to12h(slot.start)} – {to12h(slot.end)}
                       </button>
                     );
                   })}
@@ -202,7 +202,7 @@ function BookDemo() {
             </div>
             <div className="summary-rows">
               <div><span>Date</span><span>{formData.date ? formatDate(formData.date) : '—'}</span></div>
-              <div><span>Time</span><span>{hasSelection ? `${formData.startTime} – ${formData.endTime}` : '—'}</span></div>
+              <div><span>Time</span><span>{hasSelection ? `${to12h(formData.startTime)} – ${to12h(formData.endTime)}` : '—'}</span></div>
               <div><span>Where</span><span>Your home</span></div>
               <div className="total"><span style={{ color: 'var(--ink)' }}>Rate</span><span>₹{tutor.hourlyRate || 0} / hr</span></div>
             </div>
@@ -215,7 +215,7 @@ function BookDemo() {
 
       <div className="mobile-cta">
         <div className="grow">
-          <span className="price" style={{ fontSize: '1rem' }}>{hasSelection ? `${formatDate(formData.date)} · ${formData.startTime}` : 'Pick a slot'}</span>
+          <span className="price" style={{ fontSize: '1rem' }}>{hasSelection ? `${formatDate(formData.date)} · ${to12h(formData.startTime)}` : 'Pick a slot'}</span>
           <p>₹{tutor.hourlyRate || 0} / hr · at home</p>
         </div>
         <button type="button" className="btn-on-ink" disabled={booking || !hasSelection} onClick={handleSubmit}>{booking ? 'Booking...' : 'Confirm Booking'}</button>

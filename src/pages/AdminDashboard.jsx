@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import Logo from '../components/Logo';
 import Avatar from '../components/Avatar';
 import { useFeedback } from '../components/Feedback';
-import { toISO, formatDate, classRange } from '../utils/tutor';
+import { toISO, formatDate, classRange, to12h } from '../utils/tutor';
 import { fetchFeeSettings, effectiveFee, takeHome } from '../utils/fees';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -257,7 +257,7 @@ function AdminDashboard() {
                 <div key={b.id} className="feed-row">
                   <span className="dot" style={{ background: STATUS_DOT[b.status] || '#9794AA' }}></span>
                   <p>{b.parentName} → {b.tutorName} · {b.status}</p>
-                  <span className="muted" style={{ fontSize: '0.75rem', fontWeight: 700 }}>{formatDate(b.date)} · {b.startTime}</span>
+                  <span className="muted" style={{ fontSize: '0.75rem', fontWeight: 700 }}>{formatDate(b.date)} · {to12h(b.startTime)}</span>
                 </div>
               ))}
             </div>
@@ -292,7 +292,7 @@ function AdminDashboard() {
                   <b style={{ color: 'var(--ink)' }}>{formatDate(b.date)}</b>
                   <span>{b.tutorName}</span>
                   <span className="muted">{b.parentName}</span>
-                  <span className="muted">{b.startTime} – {b.endTime}</span>
+                  <span className="muted">{to12h(b.startTime)} – {to12h(b.endTime)}</span>
                   <span><span className={`pill ${b.status === 'completed' || b.status === 'confirmed' ? 'pill-success' : b.status === 'cancelled' ? 'pill-danger' : 'pill-warning'}`}>{b.status}</span></span>
                 </div>
               ))}
