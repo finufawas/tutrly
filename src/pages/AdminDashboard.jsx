@@ -78,6 +78,13 @@ function AdminDashboard() {
   };
 
   const handleSignOut = async () => {
+    const ok = await confirm({
+      title: 'Sign out?',
+      message: 'Are you sure you want to sign out of the admin panel?',
+      cancelText: 'Cancel',
+      confirmText: 'Sign out'
+    });
+    if (!ok) return;
     try { await signOut(auth); navigate('/'); } catch (err) { console.error(err); }
   };
 

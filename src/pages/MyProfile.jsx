@@ -40,6 +40,14 @@ function MyProfile() {
   };
 
   const handleLogout = async () => {
+    const ok = await confirm({
+      title: 'Sign out?',
+      message: 'Are you sure you want to sign out of your account?',
+      cancelText: 'Cancel',
+      confirmText: 'Sign out'
+    });
+    if (!ok) return;
+
     try {
       await signOut(auth);
       navigate('/');
