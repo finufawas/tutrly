@@ -22,10 +22,6 @@ function Home() {
   const { currentUser, userData } = useAuth();
   const isTutor = userData?.role === 'tutor';
   const isGuest = !currentUser;
-
-  useEffect(() => {
-    if (userData?.role === 'admin') navigate('/admin', { replace: true });
-  }, [userData, navigate]);
   const [classLevel, setClassLevel] = useState('');
   const [subject, setSubject] = useState('');
   const [board, setBoard] = useState('');

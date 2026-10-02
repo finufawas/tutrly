@@ -398,3 +398,32 @@ body.no-scroll { overflow: hidden; }
     body.has-bottom-nav .eb-foot { bottom: calc(96px + env(safe-area-inset-bottom)); }
     body.has-bottom-nav .eb-wrap { padding-bottom: 150px; }
 }
+
+
+/* ============ PRIVACY · PA (summary first) ============ */
+.pv-wrap { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.pv-title { font-size: clamp(2.2rem, 5vw, 3.5rem); margin-top: 6px; }
+.pv-lead { font-size: 1.1rem; font-weight: 600; color: var(--ink-2); margin: 4px 0 0; }
+.pv-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.pv-tile { border-radius: 32px; padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+.pv-tile h3 { font-size: 1.25rem; color: var(--ink); }
+.pv-tile p { margin: 0; font-size: 0.95rem; font-weight: 600; line-height: 1.5; color: var(--ink-2) !important; }
+.pv-ic { width: 48px; height: 48px; border-radius: 16px; background: var(--surface); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+.pv-full { border-radius: 32px; background: var(--surface); padding: 32px 36px; display: flex; flex-direction: column; gap: 18px; margin-top: 6px; }
+.pv-sec { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 16px; padding-top: 16px; border-top: 1px solid var(--line); scroll-margin-top: calc(var(--nav-h) + 1.5rem); }
+.pv-num { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--ink); }
+.pv-sec h3 { font-size: 1.15rem; margin-bottom: 6px; }
+.pv-sec p { margin: 0; font-size: 1rem; line-height: 1.7; color: var(--ink-2); max-width: 760px; }
+@media (max-width: 900px) { .pv-summary { grid-template-columns: 1fr; } }
+@media (max-width: 768px) {
+    .pv-wrap { gap: 12px; }
+    .pv-summary { gap: 12px; }
+    .pv-tile { flex-direction: row; flex-wrap: wrap; align-items: center; padding: 16px; border-radius: 24px; gap: 4px 12px; }
+    .pv-tile .pv-ic { width: 40px; height: 40px; border-radius: 13px; font-size: 1.2rem; }
+    .pv-tile h3 { font-size: 1rem; flex: 1; }
+    .pv-tile p { flex-basis: 100%; font-size: 0.875rem; }
+    .pv-full { padding: 16px; border-radius: 24px; gap: 14px; }
+    .pv-sec { grid-template-columns: 36px minmax(0, 1fr); gap: 12px; }
+    .pv-num { width: 36px; height: 36px; border-radius: 12px; font-size: 0.9rem; }
+    .pv-sec p { font-size: 0.95rem; }
+}
