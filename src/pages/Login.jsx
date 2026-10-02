@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { auth, db } from '../firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, signOut, RecaptchaVerifier, linkWithPhoneNumber } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, signOut } from 'firebase/auth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import heroTutorImg from '../assets/images/hero_tutor.jpg';
 import './Login.css';
@@ -18,13 +18,6 @@ function Login() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  
-  // OTP State
-  const [showOTP, setShowOTP] = useState(false);
-  const [otp, setOtp] = useState('');
-  const [confirmationResult, setConfirmationResult] = useState(null);
-  const [pendingCred, setPendingCred] = useState(null);
-
   const navigate = useNavigate();
 
   const handleResetPassword = async () => {
@@ -63,65 +56,27 @@ function Login() {
       } else {
         if (password.length < 8) throw new Error('Password must be at least 8 characters long.');
         if (password !== confirmPassword) throw new Error('Passwords do not match.');
-        let formattedPhone = phone;
-        if (!formattedPhone.startsWith('+')) {
-          formattedPhone = '+91' + formattedPhone.replace(/\D/g, '');
-        }
-
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         
-        try {
-          if (!window.recaptchaVerifier) {
-            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', { size: 'invisible' });
-          }
-          
-          const confResult = await linkWithPhoneNumber(cred.user, formattedPhone, window.recaptchaVerifier);
-          
-          setConfirmationResult(confResult);
-          setPendingCred(cred);
-          setShowOTP(true);
-          setMessage('SMS sent. Please enter the OTP to verify your phone number.');
-        } catch (phoneErr) {
-          await cred.user.delete();
-          if (window.recaptchaVerifier) {
-            window.recaptchaVerifier.clear();
-            window.recaptchaVerifier = null;
-          }
-          throw new Error('Phone verification failed: ' + phoneErr.message.replace('Firebase: ', ''));
-        }
+        await setDoc(doc(db, 'users', cred.user.uid), {
+          name, email, phone, role,
+          createdAt: new Date().toISOString(),
+          isVerified: role === 'parent', // Parents are verified by default, tutors need approval
+          profileComplete: false,
+          subjects: [], classLevels: [], bio: '', hourlyRate: 0
+        });
+
+        await sendEmailVerification(cred.user);
+        await signOut(auth);
+        
+        setMessage('Registration successful! Please check your email inbox to verify your account.');
+        setIsLogin(true);
+        setPassword('');
+        setConfirmPassword('');
+        setPhone('');
       }
     } catch (err) {
       setError(err.message.replace('Firebase: ', ''));
-    }
-    setLoading(false);
-  };
-
-  const handleVerifyOTP = async (e) => {
-    e.preventDefault();
-    setError(''); setMessage(''); setLoading(true);
-    try {
-      await confirmationResult.confirm(otp);
-      
-      await setDoc(doc(db, 'users', pendingCred.user.uid), {
-        name, email, phone, role,
-        createdAt: new Date().toISOString(),
-        isVerified: role === 'parent',
-        profileComplete: false,
-        subjects: [], classLevels: [], bio: '', hourlyRate: 0
-      });
-
-      await sendEmailVerification(pendingCred.user);
-      await signOut(auth);
-      
-      setMessage('Registration successful! Please check your email inbox to verify your account.');
-      setIsLogin(true);
-      setShowOTP(false);
-      setPassword('');
-      setConfirmPassword('');
-      setPhone('');
-      setOtp('');
-    } catch (err) {
-      setError('Invalid OTP. Please try again.');
     }
     setLoading(false);
   };
@@ -158,20 +113,7 @@ function Login() {
         {error && <div className="alert alert-error" style={{ margin: 0 }}><i className="ri-error-warning-line"></i><p>{error}</p></div>}
         {message && <div className="alert alert-success" style={{ margin: 0 }}><i className="ri-mail-check-line"></i><p>{message}</p></div>}
 
-        <div id="recaptcha-container"></div>
-
-        {showOTP ? (
-          <form onSubmit={handleVerifyOTP} style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-            <div>
-              <label className="field-label">Enter OTP sent to {phone}</label>
-              <input className="input" type="text" placeholder="123456" value={otp} onChange={(e) => setOtp(e.target.value)} required />
-            </div>
-            <button type="submit" disabled={loading} className="btn btn-lg btn-block" style={{ marginTop: '0.4rem' }}>
-              {loading ? 'Verifying...' : 'Verify Phone Number'}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
           {!isLogin && (
             <div className="role-grid">
               <button type="button" className={`role-tile ${role === 'parent' ? 'active' : ''}`} onClick={() => setRole('parent')}>
@@ -209,14 +151,11 @@ function Login() {
             {loading ? 'Processing...' : isLogin ? 'Sign In' : 'Sign Up'}
           </button>
         </form>
-        )}
 
-        {!showOTP && (
-          <p className="auth-foot">
-            {isLogin ? "Don't have an account? " : 'Already have an account? '}
-            <button type="button" className="text-btn" style={{ fontSize: '0.9rem' }} onClick={() => switchMode(!isLogin)}>{isLogin ? 'Sign up' : 'Log in'}</button>
-          </p>
-        )}
+        <p className="auth-foot">
+          {isLogin ? "Don't have an account? " : 'Already have an account? '}
+          <button type="button" className="text-btn" style={{ fontSize: '0.9rem' }} onClick={() => switchMode(!isLogin)}>{isLogin ? 'Sign up' : 'Log in'}</button>
+        </p>
       </div>
     </div>
   );
