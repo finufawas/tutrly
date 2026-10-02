@@ -139,6 +139,7 @@ function Dashboard() {
     }
   });
   const trackedHours = totalHours.toFixed(1);
+  const estimatedEarnings = (totalHours * (userData?.hourlyRate || 0)).toFixed(0);
 
   const firstName = (userData?.name || '').split(' ')[0] || currentUser?.email;
   const child = userData?.studentName?.split(' ')[0];
@@ -185,18 +186,28 @@ function Dashboard() {
     </div>
   );
 
-  const renderExtras = (b) => (
-    <>
-      {b.message && <p className="row-note">"{b.message}"</p>}
-      {b.status === 'cancelled' && b.cancelReason && <p className="row-reason">Reason: {b.cancelReason}</p>}
-      {b.rating && (
-        <p className="row-stars">
-          {[...Array(5)].map((_, i) => <i key={i} className={i < b.rating ? 'ri-star-fill' : 'ri-star-line'}></i>)}
-          {b.review && <span className="muted"> "{b.review}"</span>}
-        </p>
-      )}
-    </>
-  );
+  const renderExtras = (b) => {
+    let log = null;
+    if (b.actualStartTime && b.actualEndTime) {
+      const s = new Date(b.actualStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const e = new Date(b.actualEndTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const min = Math.round((new Date(b.actualEndTime) - new Date(b.actualStartTime)) / 60000);
+      log = <p className="row-note" style={{ color: 'var(--success)', fontWeight: 600 }}><i className="ri-time-line"></i> GPS Log: {s} - {e} ({min} mins)</p>;
+    }
+    return (
+      <>
+        {b.message && <p className="row-note">"{b.message}"</p>}
+        {log}
+        {b.status === 'cancelled' && b.cancelReason && <p className="row-reason">Reason: {b.cancelReason}</p>}
+        {b.rating && (
+          <p className="row-stars">
+            {[...Array(5)].map((_, i) => <i key={i} className={i < b.rating ? 'ri-star-fill' : 'ri-star-line'}></i>)}
+            {b.review && <span className="muted"> "{b.review}"</span>}
+          </p>
+        )}
+      </>
+    );
+  };
 
   if (loadingBookings && !bookings.length) {
     return <div className="page dash-page"><div className="spinner-container"><div className="spinner"></div></div></div>;
@@ -216,14 +227,17 @@ function Dashboard() {
           )}
           <div className="dash-head">
             <h1>Hi {firstName}{pending.length > 0 && <> <span className="accent">—</span> {pending.length} parent{pending.length > 1 ? 's are' : ' is'} waiting</>}</h1>
-            <Link to="/edit-profile" className="btn"><i className="ri-time-line"></i>Edit Availability</Link>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button className="btn-light" onClick={() => { navigator.clipboard.writeText(`Hi! I'm teaching ${userData?.subjects?.[0] || 'students'} in ${userData?.city || 'your area'}. Book a home class with me on Tutrly: ${window.location.origin}/tutor/${currentUser.uid}`); alert('Profile link copied to clipboard! Share it on WhatsApp to get more students.'); }}><i className="ri-share-forward-line"></i> Share Profile</button>
+              <Link to="/edit-profile" className="btn"><i className="ri-time-line"></i>Edit Availability</Link>
+            </div>
           </div>
 
           <div className="stat-row">
             <div className="tile tile-peach"><p className="eyebrow">New requests</p><p className="big-num">{pending.length}</p></div>
             <div className="tile tile-mint"><p className="eyebrow">Upcoming classes</p><p className="big-num">{upcoming.length}</p></div>
             <div className="tile tile-butter"><p className="eyebrow">Tracked hours</p><p className="big-num">{trackedHours}h</p></div>
-            <div className="tile tile-sky"><p className="eyebrow">Hourly rate</p><p className="big-num">₹{userData?.hourlyRate || 0}</p></div>
+            <div className="tile tile-sky"><p className="eyebrow">Est. Earnings</p><p className="big-num">₹{estimatedEarnings}</p></div>
           </div>
 
           <div className="tutor-dash">

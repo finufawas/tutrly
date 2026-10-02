@@ -38,11 +38,18 @@ function Home() {
       try {
         const q = query(collection(db, 'users'), where('role', '==', 'tutor'), where('isVerified', '==', true));
         const snapshot = await getDocs(q);
-        const results = [];
+        let results = [];
         snapshot.forEach((doc) => {
           const data = doc.data();
           if (data.profileComplete) results.push({ id: doc.id, ...data });
         });
+
+        if (userData?.city && userData.role !== 'tutor') {
+          const match = results.filter(t => t.city?.toLowerCase().trim() === userData.city.toLowerCase().trim());
+          const others = results.filter(t => t.city?.toLowerCase().trim() !== userData.city.toLowerCase().trim());
+          results = [...match, ...others];
+        }
+
         setFeaturedTutors(results.slice(0, 4));
       } catch (err) {
         console.error('Error fetching tutors:', err);
@@ -166,7 +173,7 @@ function Home() {
       {!isTutor && (
         <section className="section" id="find-tutor">
           <div className="section-row">
-            <h2>{isGuest ? 'Our Tutors' : 'Top Rated Tutors'}</h2>
+            <h2>{isGuest ? 'Our Tutors' : (userData?.city ? `Tutors near ${userData.city}` : 'Top Rated Tutors')}</h2>
             <Link to={isGuest ? '/login' : '/search'} className="link">{isGuest ? 'Sign in to see all →' : 'See all tutors →'}</Link>
           </div>
           {loadingTutors ? (

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import Avatar from '../components/Avatar';
 import { DAYS, classRange, nextOpenSlots, toISO, slotsFor } from '../utils/tutor';
 
@@ -11,6 +11,7 @@ function TutorProfile() {
   const navigate = useNavigate();
   const { userData } = useAuth();
   const [tutor, setTutor] = useState(null);
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -18,8 +19,19 @@ function TutorProfile() {
     const fetchTutor = async () => {
       try {
         const snap = await getDoc(doc(db, 'users', tutorId));
-        if (snap.exists() && snap.data().role === 'tutor') setTutor({ id: snap.id, ...snap.data() });
-        else setError('Tutor not found.');
+        if (snap.exists() && snap.data().role === 'tutor') {
+          setTutor({ id: snap.id, ...snap.data() });
+          const q = query(collection(db, 'bookings'), where('tutorId', '==', tutorId), where('status', '==', 'completed'));
+          const bSnap = await getDocs(q);
+          const revs = [];
+          bSnap.forEach(d => {
+            const data = d.data();
+            if (data.rating && data.review) revs.push({ id: d.id, ...data });
+          });
+          setReviews(revs);
+        } else {
+          setError('Tutor not found.');
+        }
       } catch (err) {
         setError('Error loading tutor profile.');
       }
@@ -119,6 +131,23 @@ function TutorProfile() {
               </>
             )}
           </div>
+
+          {reviews.length > 0 && (
+            <div className="tile tile-peach" style={{ gridColumn: '1 / -1' }}>
+              <p className="eyebrow" style={{ marginBottom: '1rem' }}>Parent Reviews</p>
+              <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+                {reviews.map(r => (
+                  <div key={r.id} style={{ background: 'var(--surface)', padding: '1rem', borderRadius: '1rem' }}>
+                    <p style={{ fontWeight: 800, color: 'var(--ink)', marginBottom: '0.2rem' }}>{r.parentName}</p>
+                    <p className="row-stars" style={{ color: 'var(--warning)', fontSize: '0.9rem' }}>
+                      {[...Array(5)].map((_, i) => <i key={i} className={i < r.rating ? 'ri-star-fill' : 'ri-star-line'}></i>)}
+                    </p>
+                    <p style={{ marginTop: '0.5rem', fontStyle: 'italic', color: 'var(--ink)' }}>"{r.review}"</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
