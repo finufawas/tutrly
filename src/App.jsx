@@ -16,8 +16,10 @@ import AdminDashboard from './pages/AdminDashboard';
 import Privacy from './pages/Privacy';
 import NotFound from './pages/NotFound';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { FeedbackProvider } from './components/Feedback';
 import ScrollToTop from './components/ScrollToTop';
 import './App.css';
+import './ui.css';
 
 // Requires login — redirects guests to /login
 function ProtectedRoute({ children }) {
@@ -47,26 +49,28 @@ function App() {
 
   return (
     <AuthProvider>
-      <Router basename={basename}>
-        <ScrollToTop />
-        <Navbar />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/setup-profile" element={P(<SetupProfile />)} />
-          <Route path="/search" element={P(<Search />)} />
-          <Route path="/tutor/:tutorId" element={P(<TutorProfile />)} />
-          <Route path="/book/:tutorId" element={P(<BookDemo />)} />
-          <Route path="/dashboard" element={P(<Dashboard />)} />
-          <Route path="/profile" element={P(<MyProfile />)} />
-          <Route path="/edit-profile" element={P(<EditProfile />)} />
-          <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <Footer />
-        <BottomNav />
-      </Router>
+      <FeedbackProvider>
+        <Router basename={basename}>
+          <ScrollToTop />
+          <Navbar />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/setup-profile" element={P(<SetupProfile />)} />
+            <Route path="/search" element={P(<Search />)} />
+            <Route path="/tutor/:tutorId" element={P(<TutorProfile />)} />
+            <Route path="/book/:tutorId" element={P(<BookDemo />)} />
+            <Route path="/dashboard" element={P(<Dashboard />)} />
+            <Route path="/profile" element={P(<MyProfile />)} />
+            <Route path="/edit-profile" element={P(<EditProfile />)} />
+            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Footer />
+          <BottomNav />
+        </Router>
+      </FeedbackProvider>
     </AuthProvider>
   );
 }

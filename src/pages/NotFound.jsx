@@ -1,17 +1,19 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { LogoMark } from '../components/Logo';
 
 function NotFound() {
   return (
-    <div style={{ padding: '8rem 5% 4rem', minHeight: 'calc(100vh - 100px)', background: 'var(--background)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-      <h1 style={{ fontSize: '6rem', color: '#4F46E5', marginBottom: '1rem' }}>404</h1>
-      <h2 style={{ fontSize: '2rem', color: '#1E293B', marginBottom: '1rem' }}>Page Not Found</h2>
-      <p style={{ color: 'var(--text-light)', marginBottom: '2rem', maxWidth: '400px' }}>
-        Oops! The page you are looking for doesn't exist. It might have been moved or deleted.
-      </p>
-      <Link to="/" className="btn-primary" style={{ padding: '0.75rem 2rem', fontSize: '1.1rem' }}>
-        Go Back Home
-      </Link>
+    <div className="page">
+      <div className="nf">
+        <div className="nf-tile">
+          <div className="nf-mark"><LogoMark size={96} /><span>404</span></div>
+          <h1 style={{ fontSize: 'clamp(2rem, 5vw, 2.8rem)' }}>This page isn't home</h1>
+          <p>The page you are looking for doesn't exist. It might have been moved or deleted.</p>
+        </div>
+        <Link to="/" className="btn btn-lg btn-block">Go back home</Link>
+        <Link to="/search" className="btn-light btn-lg btn-block">Find a tutor</Link>
+      </div>
     </div>
   );
 }

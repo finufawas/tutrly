@@ -1,483 +1,404 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { collection, query, getDocs, doc, updateDoc, deleteDoc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, query, getDocs, doc, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
+import Logo from '../components/Logo';
+import Avatar from '../components/Avatar';
+import { useFeedback } from '../components/Feedback';
+import { toISO, formatDate, classRange } from '../utils/tutor';
+import { fetchFeeSettings, effectiveFee, takeHome } from '../utils/fees';
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const STATUS_DOT = { completed: '#12814B', confirmed: '#6D4AFF', pending: '#FFB020', cancelled: '#C2410C' };
+const rupee = (n) => `₹${Math.round(n).toLocaleString('en-IN')}`;
+
+const tutorStatus = (t) => (t.isSuspended ? ['Suspended', 'pill-danger'] : t.isVerified ? ['Active', 'pill-success'] : ['Pending', 'pill-warning']);
 
 function AdminDashboard() {
   const { userData } = useAuth();
+  const { toast, confirm } = useFeedback();
   const navigate = useNavigate();
-  
+
   const [users, setUsers] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview'); // overview, tutors, parents, bookings, settings
-  const [selectedUser, setSelectedUser] = useState(null); // For modal
-  const [platformFee, setPlatformFee] = useState(5);
-  const [savingFee, setSavingFee] = useState(false);
+  const [tab, setTab] = useState('overview');
+  const [metric, setMetric] = useState('revenue');
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [search, setSearch] = useState('');
+  const [tutorFilter, setTutorFilter] = useState('all');
+  const [feeSettings, setFeeSettings] = useState({ commissionRate: 5 });
+  const [feeEdit, setFeeEdit] = useState(null); // { rate, from }
 
   const fetchData = async () => {
     setLoading(true);
     try {
       const uSnap = await getDocs(query(collection(db, 'users')));
-      let uRes = [];
-      uSnap.forEach((d) => uRes.push({ id: d.id, ...d.data() }));
+      const uRes = []; uSnap.forEach((d) => uRes.push({ id: d.id, ...d.data() }));
       setUsers(uRes);
-
       const bSnap = await getDocs(query(collection(db, 'bookings')));
-      let bRes = [];
-      bSnap.forEach((d) => bRes.push({ id: d.id, ...d.data() }));
+      const bRes = []; bSnap.forEach((d) => bRes.push({ id: d.id, ...d.data() }));
       setBookings(bRes);
-
-      const settingsSnap = await getDoc(doc(db, 'settings', 'platform'));
-      if (settingsSnap.exists()) {
-        setPlatformFee(settingsSnap.data().commissionRate || 5);
-      }
+      setFeeSettings(await fetchFeeSettings());
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error('Error fetching data:', error);
+      toast('Failed to load admin data.', 'error');
     }
     setLoading(false);
   };
 
   useEffect(() => {
-    if (userData && userData.role !== 'admin') {
-      navigate('/dashboard');
-    } else if (userData?.role === 'admin') {
-      fetchData();
-    }
+    if (userData && userData.role !== 'admin') navigate('/dashboard');
+    else if (userData?.role === 'admin') fetchData();
   }, [userData, navigate]);
 
-  const handleApprove = async (userId) => {
-    try {
-      await updateDoc(doc(db, 'users', userId), { isVerified: true, isSuspended: false });
-      fetchData();
-      setSelectedUser(null);
-    } catch (err) {
-      alert("Failed to approve user.");
-    }
+  // ---------- actions ----------
+  const act = async (fn, okMsg, errMsg) => {
+    try { await fn(); toast(okMsg); await fetchData(); setSelectedUser(null); }
+    catch (err) { console.error(err); toast(errMsg, 'error'); }
   };
 
-  const handleSuspend = async (userId, suspend) => {
-    if (!window.confirm(`Are you sure you want to ${suspend ? 'suspend' : 'unsuspend'} this user?`)) return;
-    try {
-      await updateDoc(doc(db, 'users', userId), { isSuspended: suspend });
-      fetchData();
-      if (selectedUser && selectedUser.id === userId) setSelectedUser(null);
-    } catch (err) {
-      alert("Failed to update user.");
-    }
+  const handleApprove = (u) => act(() => updateDoc(doc(db, 'users', u.id), { isVerified: true, isSuspended: false }), `${u.name} approved`, 'Failed to approve user.');
+
+  const handleSuspend = async (u, suspend) => {
+    const ok = await confirm({ tone: suspend ? 'warning' : 'neutral', icon: suspend ? 'ri-pause-circle-line' : 'ri-play-circle-line', title: `${suspend ? 'Suspend' : 'Reactivate'} ${u.name}?`, message: suspend ? 'They will be hidden from search and cannot take new bookings.' : 'They will appear in search again.', confirmText: suspend ? 'Suspend' : 'Reactivate' });
+    if (ok) act(() => updateDoc(doc(db, 'users', u.id), { isSuspended: suspend }), suspend ? 'User suspended' : 'User reactivated', 'Failed to update user.');
   };
 
-  const handleToggleAdmin = async (userId, isAdmin) => {
-    if (!window.confirm(`Are you sure you want to ${isAdmin ? 'promote' : 'demote'} this user to Admin?`)) return;
-    try {
-      await updateDoc(doc(db, 'users', userId), { role: isAdmin ? 'admin' : 'parent' });
-      fetchData();
-      if (selectedUser && selectedUser.id === userId) setSelectedUser(null);
-    } catch (err) {
-      alert("Failed to change user role.");
-    }
+  const handleToggleAdmin = async (u, makeAdmin) => {
+    const ok = await confirm({ icon: 'ri-shield-star-line', title: makeAdmin ? `Promote ${u.name} to Admin?` : `Remove admin access for ${u.name}?`, message: makeAdmin ? 'Admins can approve tutors, suspend users and change the platform fee.' : 'They will become a parent account.', confirmText: makeAdmin ? 'Promote' : 'Demote' });
+    if (ok) act(() => updateDoc(doc(db, 'users', u.id), { role: makeAdmin ? 'admin' : 'parent' }), makeAdmin ? 'Promoted to admin' : 'Admin access removed', 'Failed to change user role.');
+  };
+
+  const handleRemove = async (u) => {
+    const ok = await confirm({ tone: 'danger', title: `Delete ${u.name}?`, message: 'This permanently removes the user. It cannot be undone.', cancelText: 'Keep user', confirmText: 'Delete' });
+    if (ok) act(() => deleteDoc(doc(db, 'users', u.id)), 'User deleted', 'Failed to remove user.');
   };
 
   const handleSignOut = async () => {
+    try { await signOut(auth); navigate('/'); } catch (err) { console.error(err); }
+  };
+
+  // ---------- platform fee (FC: inline edit + typed confirm + start date) ----------
+  const todayISO = toISO(new Date());
+  const currentFee = effectiveFee(feeSettings);
+  const scheduled = feeSettings.nextRate != null && feeSettings.nextRateFrom && feeSettings.nextRateFrom > todayISO ? feeSettings : null;
+
+  const saveFee = async () => {
+    const rate = Number(feeEdit.rate);
+    if (isNaN(rate) || rate < 0 || rate > 30) { toast('Enter a fee between 0 and 30%.', 'warning'); return; }
+    const from = feeEdit.from || todayISO;
+    if (from < todayISO) { toast('Start date cannot be in the past.', 'warning'); return; }
+    const startsNow = from <= todayISO;
+    const typed = await confirm({
+      icon: 'ri-percent-line', tone: 'warning',
+      title: 'Confirm new platform fee',
+      message: `You're changing the fee from ${currentFee}% to ${rate}% for all tutors.`,
+      body: (
+        <div className="dlg-compare">
+          <div className="new"><small>STARTS</small><b style={{ fontSize: '1.1rem' }}>{startsNow ? 'Immediately' : formatDate(from)}</b></div>
+          <div><small>{startsNow ? '₹600/HR TUTOR KEEPS' : 'UNTIL THEN'}</small><b style={{ fontSize: '1.1rem' }}>{startsNow ? `₹${takeHome(600, rate)}` : `${currentFee}% stays`}</b></div>
+        </div>
+      ),
+      input: { label: `Type ${rate} to confirm`, mustEqual: String(rate), placeholder: String(rate) },
+      confirmText: 'Update fee'
+    });
+    if (typed === null) return;
+    const data = startsNow
+      ? { commissionRate: rate, nextRate: null, nextRateFrom: null }
+      : { commissionRate: currentFee, nextRate: rate, nextRateFrom: from };
     try {
-      await signOut(auth);
-      navigate('/');
-    } catch (err) {
-      console.error(err);
+      await setDoc(doc(db, 'settings', 'platform'), data, { merge: true });
+      setFeeSettings(s => ({ ...s, ...data }));
+      setFeeEdit(null);
+      toast(startsNow ? `Platform fee is now ${rate}%` : `${rate}% scheduled from ${formatDate(from)}`);
+    } catch (e) {
+      toast('Error updating fee: ' + e.message, 'error');
     }
   };
 
-  const handleRemove = async (userId) => {
-    if (!window.confirm("Are you sure you want to permanently delete this user? This cannot be undone.")) return;
+  const cancelScheduled = async () => {
+    const ok = await confirm({ title: 'Cancel the scheduled fee change?', message: `The fee will stay at ${currentFee}%.`, confirmText: 'Cancel change', cancelText: 'Keep it' });
+    if (!ok) return;
     try {
-      await deleteDoc(doc(db, 'users', userId));
-      fetchData();
-      setSelectedUser(null);
-    } catch (err) {
-      alert("Failed to remove user.");
-    }
+      await setDoc(doc(db, 'settings', 'platform'), { commissionRate: currentFee, nextRate: null, nextRateFrom: null }, { merge: true });
+      setFeeSettings(s => ({ ...s, commissionRate: currentFee, nextRate: null, nextRateFrom: null }));
+      toast('Scheduled change cancelled');
+    } catch (e) { toast('Failed: ' + e.message, 'error'); }
   };
 
-  if (loading) {
-    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0f172a', color: 'white' }}>Loading Admin Panel...</div>;
-  }
-
+  // ---------- derived ----------
   const tutors = users.filter(u => u.role === 'tutor');
   const parents = users.filter(u => u.role === 'parent');
   const admins = users.filter(u => u.role === 'admin');
   const pendingTutors = tutors.filter(t => !t.isVerified && !t.isSuspended);
 
-  // Calculate total tracked hours
-  let totalHours = 0;
-  let companyRevenue = 0;
-  bookings.filter(b => b.status === 'completed').forEach(b => {
-    if (b.actualStartTime && b.actualEndTime) {
-      const ms = new Date(b.actualEndTime) - new Date(b.actualStartTime);
-      const hrs = ms / 3600000;
-      totalHours += hrs;
-      if (b.commissionRate && b.hourlyRate) {
-        companyRevenue += (hrs * b.hourlyRate * (b.commissionRate / 100));
-      } else if (b.hourlyRate) {
-        // Fallback for old bookings using current platform fee if no rate saved
-        companyRevenue += (hrs * b.hourlyRate * (platformFee / 100));
+  const months = useMemo(() => {
+    const now = new Date();
+    const list = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
+      return { key: toISO(d).slice(0, 7), label: MONTHS[d.getMonth()], revenue: 0, hours: 0, bookings: 0 };
+    });
+    const idx = Object.fromEntries(list.map((m, i) => [m.key, i]));
+    bookings.forEach(b => {
+      const i = idx[b.date?.slice(0, 7)];
+      if (i === undefined) return;
+      if (b.status !== 'cancelled') list[i].bookings++;
+      if (b.status === 'completed' && b.actualStartTime && b.actualEndTime) {
+        const hrs = (new Date(b.actualEndTime) - new Date(b.actualStartTime)) / 3600000;
+        const fee = b.commissionRate ?? effectiveFee(feeSettings, b.date);
+        list[i].hours += hrs;
+        list[i].revenue += hrs * (b.hourlyRate || 0) * (fee / 100);
       }
-    }
-  });
+    });
+    return list;
+  }, [bookings, feeSettings]);
 
-  const handleSaveFee = async () => {
-    setSavingFee(true);
-    try {
-      await setDoc(doc(db, 'settings', 'platform'), { commissionRate: Number(platformFee) }, { merge: true });
-      alert('Platform fee updated successfully!');
-    } catch (e) {
-      alert('Error updating fee: ' + e.message);
-    }
-    setSavingFee(false);
-  };
+  const cur = months[5] || { revenue: 0, hours: 0, bookings: 0 };
+  const prev = months[4] || { revenue: 0 };
+  const trend = prev[metric] ? Math.round(((cur[metric] - prev[metric]) / prev[metric]) * 100) : null;
+  const maxVal = Math.max(1, ...months.map(m => m[metric]));
+  const fmt = (v) => (metric === 'revenue' ? rupee(v) : metric === 'hours' ? `${v.toFixed(0)} h` : v);
+  const completedCount = bookings.filter(b => b.status === 'completed').length;
 
-  const getStatusPill = (tutor) => {
-    if (tutor.isSuspended) return <span style={pillStyle('#ef4444')}>Suspended</span>;
-    if (tutor.isVerified) return <span style={pillStyle('#10b981')}>Active</span>;
-    return <span style={pillStyle('#f59e0b')}>Pending</span>;
-  };
+  const topTutors = useMemo(() => {
+    const map = {};
+    bookings.forEach(b => {
+      if (b.status !== 'completed' || !b.actualStartTime || !b.actualEndTime || b.date?.slice(0, 7) !== cur.key) return;
+      map[b.tutorName] = (map[b.tutorName] || 0) + (new Date(b.actualEndTime) - new Date(b.actualStartTime)) / 3600000;
+    });
+    return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  }, [bookings, cur.key]);
+
+  const feed = [...bookings].sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)).slice(0, 5);
+
+  const q = search.trim().toLowerCase();
+  const match = (u) => !q || [u.name, u.email, u.city, u.studentName].some(v => v?.toLowerCase().includes(q));
+  const tutorRows = tutors.filter(match).filter(t => tutorFilter === 'all' ? true : tutorFilter === 'pending' ? !t.isVerified && !t.isSuspended : tutorFilter === 'suspended' ? t.isSuspended : t.isVerified && !t.isSuspended);
+
+  if (loading) return <div className="admin"><div className="spinner-container" style={{ minHeight: '80vh' }}><div className="spinner"></div></div></div>;
+
+  const TABS = [['overview', 'Overview'], ['tutors', 'Tutors', tutors.length], ['parents', 'Parents', parents.length], ['bookings', 'Bookings', bookings.length], ['admins', 'Admins', admins.length], ['settings', 'Settings']];
+
+  const personRow = (u, sub, pill) => (
+    <div key={u.id} className="person-row">
+      <Avatar user={u} size={48} radius={16} />
+      <div><p className="t">{u.name || 'Unnamed'}</p><p className="s">{sub}</p></div>
+      <span className="e">{u.email}</span>
+      <span>{pill}</span>
+      <button className={!u.isVerified && u.role === 'tutor' && !u.isSuspended ? 'btn btn-sm' : 'btn-soft btn-sm'} onClick={() => setSelectedUser(u)}>
+        {!u.isVerified && u.role === 'tutor' && !u.isSuspended ? 'Review' : 'View'}
+      </button>
+    </div>
+  );
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', fontFamily: 'Inter, sans-serif' }}>
-      {/* Sidebar */}
-      <div style={{ width: '260px', background: '#0f172a', color: 'white', padding: '2rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        <h2 style={{ fontSize: '1.4rem', marginBottom: '2.5rem', paddingLeft: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <i className="ri-shield-check-fill" style={{ color: '#3b82f6' }}></i> Control Panel
-        </h2>
-        
-        <button onClick={() => setActiveTab('overview')} style={sidebarBtn(activeTab === 'overview')}>
-          <i className="ri-dashboard-line"></i> Overview
-        </button>
-        <button onClick={() => setActiveTab('tutors')} style={sidebarBtn(activeTab === 'tutors')}>
-          <i className="ri-presentation-line"></i> Tutors ({tutors.length})
-        </button>
-        <button onClick={() => setActiveTab('parents')} style={sidebarBtn(activeTab === 'parents')}>
-          <i className="ri-parent-line"></i> Students & Parents ({parents.length})
-        </button>
-        <button onClick={() => setActiveTab('admins')} style={sidebarBtn(activeTab === 'admins')}>
-          <i className="ri-shield-user-line"></i> Admins ({admins.length})
-        </button>
-        <button onClick={() => setActiveTab('bookings')} style={sidebarBtn(activeTab === 'bookings')}>
-          <i className="ri-calendar-event-line"></i> Bookings ({bookings.length})
-        </button>
-        <button onClick={() => setActiveTab('settings')} style={sidebarBtn(activeTab === 'settings')}>
-          <i className="ri-settings-3-line"></i> Platform Settings
-        </button>
-        
-        <div style={{ flex: 1 }}></div>
-        <button onClick={handleSignOut} style={{ ...sidebarBtn(false), color: '#ef4444', marginTop: 'auto' }}>
-          <i className="ri-logout-box-r-line"></i> Sign Out
-        </button>
-      </div>
+    <div className="admin">
+      <header className="admin-top">
+        <Logo suffix="ADMIN" />
+        <div className="admin-tabs">
+          {TABS.map(([id, label, count]) => (
+            <button key={id} className={tab === id ? 'active' : ''} onClick={() => { setTab(id); setSearch(''); }}>
+              {label}{count !== undefined && <span className="count">{count}</span>}
+            </button>
+          ))}
+        </div>
+        <button className="btn-light btn-sm" onClick={handleSignOut}><i className="ri-logout-box-r-line"></i>Sign out</button>
+      </header>
 
-      {/* Main Content */}
-      <div style={{ flex: 1, padding: '3rem', overflowY: 'auto' }}>
-        
-        {activeTab === 'overview' && (
-          <div>
-            <h1 style={{ fontSize: '2rem', marginBottom: '2rem', color: '#0f172a', fontWeight: 800 }}>Platform Overview</h1>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
-              <div style={metricCard('#3b82f6')}>
-                <h3 style={{ color: '#64748b', fontSize: '0.9rem', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Active Tutors</h3>
-                <p style={{ fontSize: '2.5rem', fontWeight: 800, color: '#0f172a' }}>{tutors.filter(t => t.isVerified && !t.isSuspended).length}</p>
-              </div>
-              <div style={metricCard('#f59e0b')}>
-                <h3 style={{ color: '#64748b', fontSize: '0.9rem', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Pending Approvals</h3>
-                <p style={{ fontSize: '2.5rem', fontWeight: 800, color: '#0f172a' }}>{pendingTutors.length}</p>
-              </div>
-              <div style={metricCard('#10b981')}>
-                <h3 style={{ color: '#64748b', fontSize: '0.9rem', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Total Students</h3>
-                <p style={{ fontSize: '2.5rem', fontWeight: 800, color: '#0f172a' }}>{parents.length}</p>
-              </div>
-              <div style={metricCard('#8b5cf6')}>
-                <h3 style={{ color: '#64748b', fontSize: '0.9rem', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Tracked Hours</h3>
-                <p style={{ fontSize: '2.5rem', fontWeight: 800, color: '#0f172a' }}>{totalHours.toFixed(1)}<span style={{ fontSize: '1.5rem', color: '#94a3b8' }}>h</span></p>
-              </div>
-              <div style={metricCard('#10b981')}>
-                <h3 style={{ color: '#64748b', fontSize: '0.9rem', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Platform Revenue</h3>
-                <p style={{ fontSize: '2.5rem', fontWeight: 800, color: '#0f172a' }}>₹{companyRevenue.toFixed(0)}</p>
-              </div>
-            </div>
-
-            {pendingTutors.length > 0 && (
-              <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-                <h3 style={{ marginBottom: '1.2rem', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><i className="ri-alert-fill"></i> Action Required: Pending Tutors</h3>
-                {pendingTutors.map(t => (
-                  <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderBottom: '1px solid #e2e8f0' }}>
-                    <div>
-                      <p style={{ fontWeight: 600, fontSize: '1.1rem', color: '#0f172a' }}>{t.name}</p>
-                      <p style={{ fontSize: '0.85rem', color: '#64748b' }}>{t.email}</p>
-                    </div>
-                    <button onClick={() => setSelectedUser(t)} style={{ padding: '0.6rem 1.2rem', background: '#f1f5f9', color: '#0f172a', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600 }}>Review Profile</button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'tutors' && (
-          <div>
-            <h1 style={{ fontSize: '2rem', marginBottom: '2rem', color: '#0f172a', fontWeight: 800 }}>Manage Tutors</h1>
-            <div style={{ background: 'white', borderRadius: '1rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                <thead>
-                  <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                    <th style={thStyle}>Name</th>
-                    <th style={thStyle}>Email</th>
-                    <th style={thStyle}>Status</th>
-                    <th style={thStyle}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tutors.map(t => (
-                    <tr key={t.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={tdStyle}><b>{t.name}</b></td>
-                      <td style={tdStyle}>{t.email}</td>
-                      <td style={tdStyle}>{getStatusPill(t)}</td>
-                      <td style={tdStyle}>
-                        <button onClick={() => setSelectedUser(t)} style={actionBtn('#3b82f6')}>View Details</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'parents' && (
-          <div>
-            <h1 style={{ fontSize: '2rem', marginBottom: '2rem', color: '#0f172a', fontWeight: 800 }}>Manage Parents & Students</h1>
-            <div style={{ background: 'white', borderRadius: '1rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                <thead>
-                  <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                    <th style={thStyle}>Parent Name</th>
-                    <th style={thStyle}>Student Name</th>
-                    <th style={thStyle}>Email</th>
-                    <th style={thStyle}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {parents.map(p => (
-                    <tr key={p.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={tdStyle}><b>{p.name}</b></td>
-                      <td style={tdStyle}>{p.studentName || '—'}</td>
-                      <td style={tdStyle}>{p.email}</td>
-                      <td style={tdStyle}>
-                        <button onClick={() => setSelectedUser(p)} style={actionBtn('#3b82f6')}>View Details</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'admins' && (
-          <div>
-            <h1 style={{ fontSize: '2rem', marginBottom: '2rem', color: '#0f172a', fontWeight: 800 }}>Manage Admins</h1>
-            <div style={{ background: 'white', borderRadius: '1rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                <thead>
-                  <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                    <th style={thStyle}>Admin Name</th>
-                    <th style={thStyle}>Email</th>
-                    <th style={thStyle}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {admins.map(a => (
-                    <tr key={a.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={tdStyle}><b>{a.name || 'Admin'}</b></td>
-                      <td style={tdStyle}>{a.email}</td>
-                      <td style={tdStyle}>
-                        <button onClick={() => setSelectedUser(a)} style={actionBtn('#3b82f6')}>View Details</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'bookings' && (
-          <div>
-            <h1 style={{ fontSize: '2rem', marginBottom: '2rem', color: '#0f172a', fontWeight: 800 }}>Platform Bookings</h1>
-            <div style={{ background: 'white', borderRadius: '1rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                <thead>
-                  <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                    <th style={thStyle}>Date</th>
-                    <th style={thStyle}>Tutor</th>
-                    <th style={thStyle}>Parent</th>
-                    <th style={thStyle}>Time</th>
-                    <th style={thStyle}>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {bookings.sort((a,b) => new Date(b.date) - new Date(a.date)).map(b => (
-                    <tr key={b.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={tdStyle}><b>{b.date}</b></td>
-                      <td style={tdStyle}>{b.tutorName}</td>
-                      <td style={tdStyle}>{b.parentName}</td>
-                      <td style={tdStyle}>{b.startTime} - {b.endTime}</td>
-                      <td style={tdStyle}>
-                        <span style={pillStyle(b.status === 'completed' ? '#10b981' : b.status === 'cancelled' ? '#ef4444' : b.status === 'confirmed' ? '#3b82f6' : '#f59e0b')}>
-                          {b.status.toUpperCase()}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                  {bookings.length === 0 && (
-                    <tr><td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>No bookings found on the platform yet.</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'settings' && (
-          <div>
-            <h1 style={{ fontSize: '2rem', marginBottom: '2rem', color: '#0f172a', fontWeight: 800 }}>Platform Settings</h1>
-            <div style={{ background: 'white', padding: '2rem', borderRadius: '1rem', border: '1px solid #e2e8f0', maxWidth: '600px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-              
-              <div style={{ marginBottom: '2rem' }}>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>Commission Rate (%)</label>
-                <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>This is the percentage of the tutor's hourly rate that the platform takes as a fee. Existing active classes won't be affected retroactively until they finish.</p>
-                
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <input 
-                    type="number" 
-                    min="0" max="100" 
-                    value={platformFee} 
-                    onChange={e => setPlatformFee(e.target.value)} 
-                    style={{ padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', fontSize: '1.1rem', width: '100px', fontWeight: 600 }} 
-                  />
-                  <span style={{ fontSize: '1.2rem', fontWeight: 600, color: '#64748b' }}>%</span>
+      <main className="admin-body">
+        {tab === 'overview' && (
+          <div className="admin-bento">
+            <div className="chart-tile">
+              <div className="row-between" style={{ alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                <div>
+                  <p className="eyebrow">{metric === 'revenue' ? 'Platform revenue' : metric === 'hours' ? 'Tracked hours' : 'Bookings'} · {MONTHS[new Date().getMonth()]}</p>
+                  <p className="big-num" style={{ fontSize: 'clamp(2.4rem, 5vw, 3.4rem)' }}>{fmt(cur[metric])}</p>
+                  {trend !== null && <p className={trend >= 0 ? 'trend-up' : 'trend-down'}>{trend >= 0 ? '▲' : '▼'} {Math.abs(trend)}% vs {prev.label}</p>}
+                </div>
+                <div className="seg">
+                  {[['revenue', 'Revenue'], ['hours', 'Hours'], ['bookings', 'Bookings']].map(([id, l]) => <button key={id} className={metric === id ? 'active' : ''} onClick={() => setMetric(id)}>{l}</button>)}
                 </div>
               </div>
+              <div className="chart">
+                {months.map((m, i) => <div key={m.key} className={`bar ${i === 5 ? 'now' : ''}`} style={{ height: `${(m[metric] / maxVal) * 100}%` }}><span>{fmt(m[metric])}</span></div>)}
+              </div>
+              <div className="chart-labels">{months.map(m => <span key={m.key}>{m.label}</span>)}</div>
+              <div className="mini-stats">
+                <div className="tile-lilac"><p style={{ color: 'var(--lilac-ink)' }}>Active tutors</p><b>{tutors.filter(t => t.isVerified && !t.isSuspended).length}</b></div>
+                <div className="tile-sky"><p style={{ color: 'var(--sky-ink)' }}>Students</p><b>{parents.length}</b></div>
+                <div className="tile-mint"><p style={{ color: 'var(--mint-ink)' }}>Completed classes</p><b>{completedCount}</b></div>
+              </div>
+            </div>
 
-              <button 
-                onClick={handleSaveFee} 
-                disabled={savingFee}
-                style={{ background: '#3b82f6', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', fontWeight: 600, border: 'none', cursor: savingFee ? 'not-allowed' : 'pointer', transition: 'all 0.2s', fontSize: '1rem' }}
-              >
-                {savingFee ? 'Saving...' : 'Save Settings'}
+            <div className="tile tile-peach">
+              <div className="row-between" style={{ marginBottom: 10 }}><p className="eyebrow" style={{ margin: 0 }}>Needs action</p><span className="step-num" style={{ width: 30, height: 30, margin: 0, fontSize: '0.8rem' }}>{pendingTutors.length}</span></div>
+              {pendingTutors.length === 0 ? <p style={{ fontWeight: 600 }}>No tutors waiting for approval.</p> : pendingTutors.slice(0, 3).map(t => (
+                <div key={t.id} className="queue-item">
+                  <Avatar user={t} size={38} radius={13} />
+                  <div style={{ flex: 1, minWidth: 0 }}><p style={{ fontWeight: 800, color: 'var(--ink)', fontSize: '0.9rem' }}>{t.name}</p><p style={{ fontSize: '0.72rem', fontWeight: 600 }}>{t.subjects?.[0] || 'Tutor'}{t.city ? ` · ${t.city}` : ''}</p></div>
+                  <button className="btn btn-sm" style={{ height: 34 }} onClick={() => setSelectedUser(t)}>Review</button>
+                </div>
+              ))}
+            </div>
+
+            <div className="tile tile-butter">
+              <p className="eyebrow" style={{ marginBottom: 10 }}>Top tutors · {MONTHS[new Date().getMonth()]}</p>
+              {topTutors.length === 0 ? <p style={{ fontWeight: 600 }}>No completed classes this month yet.</p> : topTutors.map(([name, hrs], i) => (
+                <div key={name} className="rank-item"><b>{i + 1}</b><p>{name}</p><b style={{ fontSize: '0.85rem', color: 'var(--ink)' }}>{hrs.toFixed(1)} h</b></div>
+              ))}
+            </div>
+
+            <div className="feed-tile">
+              <div className="row-between" style={{ marginBottom: 6 }}><h3>Latest bookings</h3><button className="text-btn" onClick={() => setTab('bookings')}>All bookings →</button></div>
+              {feed.length === 0 ? <p>No bookings on the platform yet.</p> : feed.map(b => (
+                <div key={b.id} className="feed-row">
+                  <span className="dot" style={{ background: STATUS_DOT[b.status] || '#9794AA' }}></span>
+                  <p>{b.parentName} → {b.tutorName} · {b.status}</p>
+                  <span className="muted" style={{ fontSize: '0.75rem', fontWeight: 700 }}>{formatDate(b.date)} · {b.startTime}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {(tab === 'tutors' || tab === 'parents' || tab === 'admins') && (
+          <>
+            <div className="dash-head"><h1>{tab === 'tutors' ? 'Tutors' : tab === 'parents' ? 'Students & Parents' : 'Admins'}</h1></div>
+            <div className="people-tools">
+              <div className="search"><i className="ri-search-line"></i><input className="input" placeholder="Search by name, email or city" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
+              {tab === 'tutors' && (
+                <div className="seg">
+                  {[['all', 'All'], ['pending', `Pending · ${pendingTutors.length}`], ['active', 'Active'], ['suspended', 'Suspended']].map(([id, l]) => <button key={id} className={tutorFilter === id ? 'active' : ''} onClick={() => setTutorFilter(id)}>{l}</button>)}
+                </div>
+              )}
+            </div>
+            <div className="people-list">
+              {tab === 'tutors' && (tutorRows.length ? tutorRows.map(t => { const [l, c] = tutorStatus(t); return personRow(t, `${t.subjects?.join(', ') || 'Tutor'}${t.city ? ` · ${t.city}` : ''}`, <span className={`pill ${c}`}>{l}</span>); }) : <p style={{ padding: 12 }}>No tutors match.</p>)}
+              {tab === 'parents' && (parents.filter(match).length ? parents.filter(match).map(p => personRow(p, `Student: ${p.studentName || '—'}${p.studentClass ? ` · ${p.studentClass}` : ''}`, <span className="pill pill-muted">Parent</span>)) : <p style={{ padding: 12 }}>No parents match.</p>)}
+              {tab === 'admins' && admins.filter(match).map(a => personRow(a, a.email === userData?.email ? 'You' : 'Admin', <span className="pill" style={{ background: 'var(--lilac)' }}>Admin</span>))}
+            </div>
+          </>
+        )}
+
+        {tab === 'bookings' && (
+          <>
+            <div className="dash-head"><h1>Platform Bookings</h1></div>
+            <div className="people-list">
+              {bookings.length === 0 ? <p style={{ padding: 12 }}>No bookings found on the platform yet.</p> : [...bookings].sort((a, b) => new Date(b.date) - new Date(a.date)).map(b => (
+                <div key={b.id} className="booking-row">
+                  <b style={{ color: 'var(--ink)' }}>{formatDate(b.date)}</b>
+                  <span>{b.tutorName}</span>
+                  <span className="muted">{b.parentName}</span>
+                  <span className="muted">{b.startTime} – {b.endTime}</span>
+                  <span><span className={`pill ${b.status === 'completed' || b.status === 'confirmed' ? 'pill-success' : b.status === 'cancelled' ? 'pill-danger' : 'pill-warning'}`}>{b.status}</span></span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {tab === 'settings' && (
+          <div className="settings-wrap">
+            <div className="dash-head"><h1>Settings</h1></div>
+            <div className="set-list">
+              <div className={`set-row ${feeEdit ? 'editing' : ''}`}>
+                <span className="ic tint-4"><i className="ri-percent-line"></i></span>
+                <div className="grow">
+                  <b>Platform fee</b>
+                  <p><small>{feeEdit ? `Current ${currentFee}% · a ₹600/hr tutor would keep ₹${takeHome(600, feeEdit.rate)}` : `Share of each tutor's hourly rate · a ₹600/hr tutor keeps ₹${takeHome(600, currentFee)}`}</small></p>
+                </div>
+                {feeEdit ? (
+                  <>
+                    <div className="fee-input"><input className="input" type="number" min="0" max="30" step="0.5" value={feeEdit.rate} onChange={(e) => setFeeEdit({ ...feeEdit, rate: e.target.value })} autoFocus /><span>%</span></div>
+                    <div className="date-input"><label className="field-label" style={{ fontSize: '0.7rem', marginBottom: 2 }}>STARTS</label><input className="input" type="date" min={todayISO} value={feeEdit.from} onChange={(e) => setFeeEdit({ ...feeEdit, from: e.target.value })} style={{ height: 44 }} /></div>
+                    <button className="btn-soft btn-sm" onClick={() => setFeeEdit(null)}>Cancel</button>
+                    <button className="btn btn-sm" onClick={saveFee} disabled={String(feeEdit.rate) === '' || (Number(feeEdit.rate) === currentFee && feeEdit.from === todayISO)}>Save</button>
+                  </>
+                ) : (
+                  <>
+                    <b style={{ fontSize: '1.2rem' }}>{currentFee}%</b>
+                    <button className="btn-soft btn-sm" onClick={() => setFeeEdit({ rate: currentFee, from: todayISO })}><i className="ri-pencil-line"></i>Edit</button>
+                  </>
+                )}
+              </div>
+              <button className="set-row" style={{ width: '100%', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--ink)' }} onClick={handleSignOut}>
+                <span className="ic tint-0"><i className="ri-logout-box-r-line"></i></span>
+                <div className="grow"><b>Sign out</b><p><small>{userData?.email}</small></p></div>
+                <i className="ri-arrow-right-s-line" style={{ fontSize: '1.2rem', color: 'var(--muted)' }}></i>
               </button>
             </div>
+            {scheduled && (
+              <div className="scheduled">
+                <i className="ri-calendar-schedule-line" style={{ fontSize: '1.2rem' }}></i>
+                <span>{scheduled.nextRate}% starts {formatDate(scheduled.nextRateFrom)}. Classes before then stay at {currentFee}%.</span>
+                <button className="text-btn" onClick={cancelScheduled}>Cancel change</button>
+              </div>
+            )}
           </div>
         )}
-      </div>
+      </main>
 
-      {/* User Details Modal */}
       {selectedUser && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
-          <div style={{ background: 'white', padding: '2.5rem', borderRadius: '1.25rem', width: '550px', maxWidth: '90%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-              <h2 style={{ margin: 0, color: '#0f172a', fontSize: '1.5rem' }}>User Profile</h2>
-              <button onClick={() => setSelectedUser(null)} style={{ background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', cursor: 'pointer', color: '#64748b' }}><i className="ri-close-line"></i></button>
+        <>
+          <div className="drawer-backdrop" onClick={() => setSelectedUser(null)}></div>
+          <aside className="drawer" role="dialog" aria-modal="true">
+            <div className="row-between">
+              <span className="eyebrow" style={{ margin: 0 }}>USER PROFILE</span>
+              <button className="icon-btn" style={{ background: 'var(--surface-2)' }} onClick={() => setSelectedUser(null)} aria-label="Close"><i className="ri-close-line"></i></button>
             </div>
-            
-            <div style={{ marginBottom: '2rem', background: '#f8fafc', padding: '1.5rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div><p style={labelStyle}>Full Name</p><p style={valueStyle}>{selectedUser.name}</p></div>
-                <div><p style={labelStyle}>Account Role</p><p style={{...valueStyle, textTransform: 'capitalize'}}>{selectedUser.role}</p></div>
-                <div><p style={labelStyle}>Email Address</p><p style={valueStyle}>{selectedUser.email}</p></div>
-                <div><p style={labelStyle}>Phone Number</p><p style={valueStyle}>{selectedUser.phone || '—'}</p></div>
-                <div style={{ gridColumn: 'span 2' }}><p style={labelStyle}>Location / City</p><p style={valueStyle}>{selectedUser.city || '—'}</p></div>
+            <div className={`drawer-head ${selectedUser.role === 'tutor' && !selectedUser.isVerified ? 'tile-peach' : 'tile-lilac'}`}>
+              <Avatar user={selectedUser} size={64} radius={20} />
+              <div>
+                <p style={{ fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--ink)' }}>{selectedUser.name}</p>
+                <p style={{ fontWeight: 700, fontSize: '0.8rem', textTransform: 'capitalize' }}>{selectedUser.role}{selectedUser.role === 'tutor' ? ` · ${tutorStatus(selectedUser)[0]}` : ''}</p>
               </div>
             </div>
-
-            {selectedUser.role === 'tutor' && (
-              <div style={{ marginBottom: '2rem' }}>
-                <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: '#0f172a', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>Tutor Details</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                  <div><p style={labelStyle}>Hourly Rate</p><p style={valueStyle}>₹{selectedUser.hourlyRate || 0}</p></div>
-                  <div><p style={labelStyle}>Current Status</p><p style={{ marginTop: '0.2rem' }}>{getStatusPill(selectedUser)}</p></div>
-                  <div style={{ gridColumn: 'span 2' }}><p style={labelStyle}>Subjects</p><p style={valueStyle}>{selectedUser.subjects?.join(', ') || '—'}</p></div>
-                  <div style={{ gridColumn: 'span 2' }}><p style={labelStyle}>Boards & Classes</p><p style={valueStyle}>{selectedUser.boards?.join(', ') || '—'} | {selectedUser.classLevels?.join(', ') || '—'}</p></div>
-                  <div style={{ gridColumn: 'span 2' }}><p style={labelStyle}>Bio</p><p style={{ ...valueStyle, background: '#f8fafc', padding: '1rem', borderRadius: '0.5rem', marginTop: '0.5rem', fontSize: '0.9rem' }}>"{selectedUser.bio || '—'}"</p></div>
-                </div>
-              </div>
-            )}
-
-            {selectedUser.role === 'parent' && (
-              <div style={{ marginBottom: '2rem' }}>
-                <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: '#0f172a', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>Student Details</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div><p style={labelStyle}>Student Name</p><p style={valueStyle}>{selectedUser.studentName || '—'}</p></div>
-                  <div><p style={labelStyle}>Class Level</p><p style={valueStyle}>{selectedUser.studentClass || '—'}</p></div>
-                  <div style={{ gridColumn: 'span 2' }}><p style={labelStyle}>Board</p><p style={valueStyle}>{selectedUser.studentBoard?.join(', ') || '—'}</p></div>
-                </div>
-              </div>
-            )}
-
-            <div style={{ display: 'flex', gap: '1rem', paddingTop: '1.5rem', borderTop: '1px solid #e2e8f0', flexWrap: 'wrap' }}>
-              {selectedUser.role === 'tutor' && !selectedUser.isVerified && !selectedUser.isSuspended && (
-                <button onClick={() => handleApprove(selectedUser.id)} style={{ flex: 1, padding: '0.8rem', background: '#10b981', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' }}><i className="ri-check-line"></i> Approve Tutor</button>
-              )}
-              {selectedUser.role !== 'admin' && (
+            <div className="fact-grid">
+              <div className="fact wide"><small>EMAIL</small><span>{selectedUser.email}</span></div>
+              <div className="fact"><small>PHONE</small><span>{selectedUser.phone || '—'}</span></div>
+              <div className="fact"><small>CITY</small><span>{selectedUser.city || '—'}{selectedUser.location ? ' · GPS' : ''}</span></div>
+              {selectedUser.role === 'tutor' && (
                 <>
-                  <button onClick={() => handleToggleAdmin(selectedUser.id, true)} style={{ flex: 1, padding: '0.8rem', background: '#8b5cf6', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' }}>
-                    <i className="ri-shield-star-line"></i> Promote to Admin
-                  </button>
-                  <button onClick={() => handleSuspend(selectedUser.id, !selectedUser.isSuspended)} style={{ flex: 1, padding: '0.8rem', background: selectedUser.isSuspended ? '#3b82f6' : '#f59e0b', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' }}>
-                    {selectedUser.isSuspended ? <><i className="ri-play-circle-line"></i> Reactivate</> : <><i className="ri-pause-circle-line"></i> Suspend</>}
-                  </button>
+                  <div className="fact"><small>HOURLY RATE</small><span>₹{selectedUser.hourlyRate || 0}</span></div>
+                  <div className="fact"><small>BOARDS</small><span>{selectedUser.boards?.join(' · ') || '—'}</span></div>
+                  <div className="fact wide"><small>SUBJECTS · CLASSES</small><span>{selectedUser.subjects?.join(', ') || '—'} · {classRange(selectedUser.classLevels)}</span></div>
+                  <div className="fact wide"><small>BIO</small><span style={{ fontWeight: 500 }}>"{selectedUser.bio || '—'}"</span></div>
                 </>
               )}
-              {selectedUser.role === 'admin' && userData?.email !== selectedUser.email && (
-                <button onClick={() => handleToggleAdmin(selectedUser.id, false)} style={{ flex: 1, padding: '0.8rem', background: '#f59e0b', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' }}>
-                  <i className="ri-user-down-line"></i> Demote Admin
-                </button>
+              {selectedUser.role === 'parent' && (
+                <>
+                  <div className="fact"><small>STUDENT</small><span>{selectedUser.studentName || '—'}</span></div>
+                  <div className="fact"><small>CLASS</small><span>{selectedUser.studentClass || '—'}</span></div>
+                  <div className="fact wide"><small>BOARD</small><span>{selectedUser.studentBoard?.join(', ') || '—'}</span></div>
+                </>
               )}
-              <button onClick={() => handleRemove(selectedUser.id)} style={{ padding: '0.8rem 1.2rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' }} title="Delete Permanently"><i className="ri-delete-bin-line"></i></button>
             </div>
-          </div>
-        </div>
+            <div className="drawer-actions">
+              {selectedUser.role === 'tutor' && !selectedUser.isVerified && !selectedUser.isSuspended && (
+                <button className="btn btn-success btn-lg btn-block" onClick={() => handleApprove(selectedUser)}><i className="ri-check-line"></i>Approve tutor</button>
+              )}
+              <div className="row">
+                {selectedUser.role !== 'admin' ? (
+                  <>
+                    <button className="btn-soft" onClick={() => handleToggleAdmin(selectedUser, true)}><i className="ri-shield-star-line"></i>Make admin</button>
+                    <button className="btn-soft" style={{ background: 'var(--butter)' }} onClick={() => handleSuspend(selectedUser, !selectedUser.isSuspended)}>
+                      <i className={selectedUser.isSuspended ? 'ri-play-circle-line' : 'ri-pause-circle-line'}></i>{selectedUser.isSuspended ? 'Reactivate' : 'Suspend'}
+                    </button>
+                  </>
+                ) : userData?.email !== selectedUser.email ? (
+                  <button className="btn-soft" style={{ gridColumn: 'span 2' }} onClick={() => handleToggleAdmin(selectedUser, false)}><i className="ri-user-unfollow-line"></i>Remove admin</button>
+                ) : <span style={{ gridColumn: 'span 2' }}></span>}
+                <button className="btn-danger btn-icon" style={{ width: 48, height: 48 }} title="Delete permanently" onClick={() => handleRemove(selectedUser)}><i className="ri-delete-bin-6-line"></i></button>
+              </div>
+            </div>
+          </aside>
+        </>
       )}
     </div>
   );
 }
-
-// Inline styles for Admin Panel isolation
-const sidebarBtn = (active) => ({
-  display: 'block', width: '100%', textAlign: 'left', padding: '0.85rem 1.2rem',
-  background: active ? '#1e293b' : 'transparent', color: active ? '#38bdf8' : '#94a3b8',
-  border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '1rem', fontWeight: 600,
-  transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.75rem'
-});
-
-const metricCard = (color) => ({
-  background: 'white', padding: '1.5rem', borderRadius: '1rem',
-  borderLeft: `5px solid ${color}`, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
-});
-
-const thStyle = { padding: '1.25rem 1rem', color: '#64748b', fontWeight: 600, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' };
-const tdStyle = { padding: '1.25rem 1rem', color: '#334155', fontSize: '0.95rem' };
-const labelStyle = { fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em', marginBottom: '0.25rem' };
-const valueStyle = { fontSize: '1rem', color: '#0f172a', fontWeight: 500 };
-
-const pillStyle = (color) => ({
-  background: `${color}15`, color: color, padding: '0.35rem 0.85rem',
-  borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em'
-});
-
-const actionBtn = (color) => ({
-  background: 'transparent', color: color, border: `1px solid ${color}40`,
-  padding: '0.4rem 0.85rem', borderRadius: '0.35rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem',
-  transition: 'all 0.2s'
-});
 
 export default AdminDashboard;

@@ -1,194 +1,137 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import Cropper from 'react-easy-crop';
+import Avatar from '../components/Avatar';
+import { useFeedback } from '../components/Feedback';
+import { fetchFeeSettings, effectiveFee, takeHome } from '../utils/fees';
 
-const getCroppedImg = (imageSrc, pixelCrop) => {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.src = imageSrc;
-    image.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 250;
-      canvas.height = 250;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(
-        image,
-        pixelCrop.x,
-        pixelCrop.y,
-        pixelCrop.width,
-        pixelCrop.height,
-        0,
-        0,
-        250,
-        250
-      );
-      resolve(canvas.toDataURL('image/jpeg', 0.8));
-    };
-    image.onerror = (error) => reject(error);
-  });
-};
+const getCroppedImg = (imageSrc, pixelCrop) => new Promise((resolve, reject) => {
+  const image = new Image();
+  image.src = imageSrc;
+  image.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 250;
+    canvas.height = 250;
+    canvas.getContext('2d').drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, 250, 250);
+    resolve(canvas.toDataURL('image/jpeg', 0.8));
+  };
+  image.onerror = reject;
+});
+
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const EMPTY_WEEK = { Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [] };
+const CLASSES = [...Array(12)].map((_, i) => `Class ${i + 1}`);
+const BOARDS = ['State', 'CBSE', 'ICSE'];
+const TINTS = ['tint-0', 'tint-2', 'tint-1', 'tint-3', 'tint-4'];
 
 function EditProfile() {
   const { currentUser, userData } = useAuth();
+  const { toast } = useFeedback();
   const navigate = useNavigate();
+  const isTutor = userData?.role === 'tutor';
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
-  const [formData, setFormData] = useState({
-    name: '',
-    city: '',
-    bio: '',
-    hourlyRate: '',
-    subjects: [],
-    classLevels: [],
-    photoURL: '',
-    availability: {
-      Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: []
-    }
-  });
+  const [initial, setInitial] = useState(null);
+  const [formData, setFormData] = useState({ name: '', city: '', bio: '', hourlyRate: '', subjects: [], classLevels: [], boards: [], photoURL: '', location: null, availability: EMPTY_WEEK });
   const [subjectInput, setSubjectInput] = useState('');
-  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-  
   const [newSlot, setNewSlot] = useState({ day: 'Monday', start: '', end: '' });
-
+  const [locLoading, setLocLoading] = useState(false);
   const [cropSrc, setCropSrc] = useState(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-  const [platformFee, setPlatformFee] = useState(5);
-
-  const availableClasses = [...Array(12)].map((_, i) => `Class ${i+1}`);
-  const availableBoards = ['State', 'CBSE', 'ICSE'];
+  const [fee, setFee] = useState(5);
 
   useEffect(() => {
     if (userData) {
-      setFormData({
-        name: userData.name || '',
-        city: userData.city || '',
-        bio: userData.bio || '',
-        hourlyRate: userData.hourlyRate || '',
-        subjects: userData.subjects || [],
-        classLevels: userData.classLevels || [],
-        boards: userData.boards || [],
-        photoURL: userData.photoURL || '',
-        availability: userData.availability || {
-          Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: []
-        }
-      });
+      const d = {
+        name: userData.name || '', city: userData.city || '', bio: userData.bio || '', hourlyRate: userData.hourlyRate || '',
+        subjects: userData.subjects || [], classLevels: userData.classLevels || [], boards: userData.boards || [],
+        photoURL: userData.photoURL || '', location: userData.location || null,
+        availability: { ...EMPTY_WEEK, ...(userData.availability || {}) }
+      };
+      setFormData(d);
+      setInitial(d);
     }
-
-    const fetchFee = async () => {
-      try {
-        const snap = await getDoc(doc(db, 'settings', 'platform'));
-        if (snap.exists()) setPlatformFee(snap.data().commissionRate || 5);
-      } catch(e) {}
-    };
-    fetchFee();
+    fetchFeeSettings().then(s => setFee(effectiveFee(s)));
   }, [userData]);
 
-  const handleCheckboxChange = (e, field) => {
-    const { value, checked } = e.target;
-    setFormData(prev => {
-      const currentList = prev[field] || [];
-      if (checked) {
-        return { ...prev, [field]: [...currentList, value] };
-      } else {
-        return { ...prev, [field]: currentList.filter(item => item !== value) };
-      }
-    });
-  };
+  const changes = useMemo(() => {
+    if (!initial) return 0;
+    return Object.keys(formData).filter(k => JSON.stringify(formData[k]) !== JSON.stringify(initial[k])).length;
+  }, [formData, initial]);
+
+  const set = (patch) => setFormData(prev => ({ ...prev, ...patch }));
+  const toggle = (field, item) => setFormData(prev => {
+    const list = prev[field] || [];
+    return { ...prev, [field]: list.includes(item) ? list.filter(i => i !== item) : [...list, item] };
+  });
 
   const handleAddSubject = (e) => {
-    e.preventDefault();
-    if (subjectInput.trim() && !formData.subjects.includes(subjectInput.trim())) {
-      setFormData(prev => ({ ...prev, subjects: [...prev.subjects, subjectInput.trim()] }));
-      setSubjectInput('');
-    }
-  };
-
-  const removeSubject = (sub) => {
-    setFormData(prev => ({ ...prev, subjects: prev.subjects.filter(s => s !== sub) }));
+    e?.preventDefault();
+    const s = subjectInput.trim();
+    if (s && !formData.subjects.includes(s)) { set({ subjects: [...formData.subjects, s] }); setSubjectInput(''); }
   };
 
   const handleAddSlot = () => {
-    if (!newSlot.start || !newSlot.end) {
-      alert("Please select both start and end times.");
-      return;
-    }
-    if (newSlot.start >= newSlot.end) {
-      alert("End time must be after start time.");
-      return;
-    }
-    
-    setFormData(prev => ({
-      ...prev,
-      availability: {
-        ...prev.availability,
-        [newSlot.day]: [...(prev.availability[newSlot.day] || []), { start: newSlot.start, end: newSlot.end }]
-      }
-    }));
+    if (!newSlot.start || !newSlot.end) { toast('Please select both start and end times.', 'warning'); return; }
+    if (newSlot.start >= newSlot.end) { toast('Pick a later end time for this slot.', 'warning', { title: 'End time must be after start' }); return; }
+    set({ availability: { ...formData.availability, [newSlot.day]: [...(formData.availability[newSlot.day] || []), { start: newSlot.start, end: newSlot.end }].sort((a, b) => a.start.localeCompare(b.start)) } });
     setNewSlot({ ...newSlot, start: '', end: '' });
   };
 
   const handleRemoveSlot = (day, index) => {
-    setFormData(prev => {
-      const newDaySlots = [...prev.availability[day]];
-      newDaySlots.splice(index, 1);
-      return {
-        ...prev,
-        availability: { ...prev.availability, [day]: newDaySlots }
-      };
-    });
+    const slots = [...formData.availability[day]];
+    slots.splice(index, 1);
+    set({ availability: { ...formData.availability, [day]: slots } });
+  };
+
+  const detectLocation = () => {
+    if (!navigator.geolocation) { toast('Geolocation is not supported by your browser.', 'error'); return; }
+    setLocLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => { set({ location: { lat: pos.coords.latitude, lng: pos.coords.longitude } }); setLocLoading(false); toast('Precise location saved'); },
+      () => { setLocLoading(false); toast('Failed to get location. Please allow location access.', 'error'); },
+      { enableHighAccuracy: true }
+    );
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => setCropSrc(event.target.result);
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const onCropComplete = (croppedArea, croppedAreaPixels) => {
-    setCroppedAreaPixels(croppedAreaPixels);
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => setCropSrc(event.target.result);
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   const confirmCrop = async () => {
     try {
-      const croppedBase64 = await getCroppedImg(cropSrc, croppedAreaPixels);
-      setFormData(prev => ({ ...prev, photoURL: croppedBase64 }));
+      set({ photoURL: await getCroppedImg(cropSrc, croppedAreaPixels) });
       setCropSrc(null);
     } catch (e) {
       console.error(e);
-      alert('Error cropping image');
+      toast('Error cropping image', 'error');
     }
   };
 
+  const discard = () => { if (initial) setFormData(initial); };
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     setLoading(true);
     setError('');
-
     try {
-      const userRef = doc(db, 'users', currentUser.uid);
-      await updateDoc(userRef, {
-        name: formData.name,
-        city: formData.city,
-        bio: formData.bio,
-        hourlyRate: Number(formData.hourlyRate),
-        subjects: formData.subjects,
-        classLevels: formData.classLevels,
-        boards: formData.boards,
-        photoURL: formData.photoURL,
-        availability: formData.availability
+      const payload = { name: formData.name, city: formData.city, photoURL: formData.photoURL, location: formData.location };
+      if (isTutor) Object.assign(payload, {
+        bio: formData.bio, hourlyRate: Number(formData.hourlyRate), subjects: formData.subjects,
+        classLevels: formData.classLevels, boards: formData.boards, availability: formData.availability
       });
-      // Force reload to get fresh data context or navigate to dashboard where it might trigger re-render
-      // We removed window.location.reload() to prevent 404s on GitHub Pages.
-      // AuthContext now uses onSnapshot to update data in real-time!
+      await updateDoc(doc(db, 'users', currentUser.uid), payload);
+      toast('Profile saved');
       navigate('/profile');
     } catch (err) {
       setError('Failed to update profile: ' + err.message);
@@ -196,220 +139,142 @@ function EditProfile() {
     setLoading(false);
   };
 
+  const done = {
+    basics: formData.name.trim() && formData.city.trim(),
+    teaching: formData.subjects.length && formData.classLevels.length && formData.boards.length,
+    rate: Number(formData.hourlyRate) > 0,
+    availability: DAYS.some(d => formData.availability[d]?.length),
+    bio: formData.bio.trim()
+  };
+  const sections = isTutor
+    ? [['basics', 'Basics', 'ri-user-3-line'], ['teaching', 'Teaching', 'ri-book-open-line'], ['rate', 'Rate & fee', 'ri-money-rupee-circle-line'], ['availability', 'Availability', 'ri-calendar-2-line'], ['bio', 'Bio', 'ri-quill-pen-line']]
+    : [['basics', 'Basics', 'ri-user-3-line']];
+
   return (
-    <div style={{ padding: '8rem 5% 4rem', minHeight: 'calc(100vh - 100px)' }}>
-      <div style={{ background: 'var(--white)', padding: '3rem', borderRadius: '1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', maxWidth: '800px', margin: '0 auto' }}>
-        <button type="button" className="back-btn desktop-hidden" style={{ marginBottom: '1.5rem' }} onClick={() => navigate(-1)}>
-          <i className="ri-arrow-left-line"></i>Back
-        </button>
-        <h2 style={{ fontSize: '2rem', marginBottom: '2rem' }}>{userData?.role === 'tutor' ? 'Edit Tutor Profile' : 'Edit Profile'}</h2>
-        
-        {error && <div style={{ color: 'red', marginBottom: '1rem', padding: '1rem', background: '#fee2e2', borderRadius: '0.5rem' }}>{error}</div>}
+    <div className="page">
+      <form className="edit-grid" onSubmit={handleSubmit}>
+        <nav className="edit-nav">
+          <button type="button" className="back-btn" style={{ background: 'var(--surface-2)', alignSelf: 'flex-start' }} onClick={() => navigate('/profile')}><i className="ri-arrow-left-line"></i>Back to profile</button>
+          {sections.map(([id, label, icon]) => (
+            <a key={id} href={`#sec-${id}`}><i className={icon}></i>{label}<i className={done[id] ? 'ri-checkbox-circle-fill ok' : 'ri-error-warning-fill todo'}></i></a>
+          ))}
+        </nav>
 
-        {cropSrc && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ position: 'relative', width: '90%', maxWidth: '500px', height: '400px', background: '#222', borderRadius: '1rem', overflow: 'hidden' }}>
-              <Cropper
-                image={cropSrc}
-                crop={crop}
-                zoom={zoom}
-                aspect={1}
-                cropShape="round"
-                showGrid={false}
-                onCropChange={setCrop}
-                onCropComplete={onCropComplete}
-                onZoomChange={setZoom}
-              />
+        <div className="edit-main">
+          <div className="dash-head" style={{ marginBottom: 0 }}><h1>{isTutor ? 'Edit Tutor Profile' : 'Edit Profile'}</h1></div>
+          {error && <div className="alert alert-error" style={{ margin: 0 }}><i className="ri-error-warning-line"></i><p>{error}</p></div>}
+
+          <section className="tile" id="sec-basics">
+            <div className="basics-grid">
+              <div className="photo-edit">
+                <Avatar user={{ ...userData, photoURL: formData.photoURL, name: formData.name }} size={140} radius={70} />
+                <label><i className="ri-camera-line"></i>Change<input type="file" accept="image/*" onChange={handleImageChange} /></label>
+              </div>
+              <div>
+                <label className="field-label">Full Name</label>
+                <input className="input" type="text" value={formData.name} onChange={(e) => set({ name: e.target.value })} required />
+              </div>
+              <div>
+                <label className="field-label">City / Location</label>
+                <div className="input-with-chip">
+                  <input className="input" type="text" value={formData.city} onChange={(e) => set({ city: e.target.value })} placeholder="e.g. Kochi, Kerala" required />
+                  <button type="button" className="gps-chip" onClick={detectLocation} disabled={locLoading}>
+                    <i className="ri-map-pin-line"></i>{locLoading ? 'Detecting…' : formData.location ? 'GPS saved' : 'Detect GPS'}
+                  </button>
+                </div>
+              </div>
             </div>
-            <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem' }}>
-              <button type="button" className="btn" onClick={confirmCrop}>Save Profile Picture</button>
-              <button type="button" className="btn-light" onClick={() => setCropSrc(null)}>Cancel</button>
-            </div>
-          </div>
-        )}
+          </section>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Profile Picture</label>
-            {formData.photoURL && <img src={formData.photoURL} alt="Profile" style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', marginBottom: '1rem' }} />}
-            <input 
-              className="input"
-              type="file" 
-              accept="image/*"
-              onChange={handleImageChange}
-              style={{ padding: '0.75rem 1.25rem', height: 'auto' }}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Full Name</label>
-            <input 
-              className="input"
-              type="text" 
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
-              required
-              style={{ width: '100%' }}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>City / Location</label>
-            <input 
-              className="input"
-              type="text" 
-              value={formData.city}
-              onChange={(e) => setFormData({...formData, city: e.target.value})}
-              placeholder="e.g. Kochi, Kerala"
-              required
-              style={{ width: '100%' }}
-            />
-          </div>
-
-          {userData?.role === 'tutor' && (
+          {isTutor && (
             <>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Hourly Rate (₹)</label>
-                <input 
-                  className="input"
-                  type="number" 
-                  value={formData.hourlyRate}
-                  onChange={(e) => setFormData({...formData, hourlyRate: e.target.value})}
-                  required
-                  min="0"
-                  style={{ width: '100%' }}
-                />
-                {formData.hourlyRate > 0 && (
-                  <p style={{ fontSize: '0.85rem', color: 'var(--primary)', marginTop: '0.5rem', fontWeight: 500 }}>
-                    <i className="ri-information-line"></i> Tutrly takes a {platformFee}% platform fee. Your net take-home will be ₹{Math.round(formData.hourlyRate * (1 - (platformFee / 100)))}/hr.
-                  </p>
-                )}
-              </div>
+              <section className="tile" id="sec-teaching">
+                <div className="row-between"><h3>Teaching</h3><span className="muted" style={{ fontSize: '0.8rem', fontWeight: 700 }}>Tap to select</span></div>
+                <div>
+                  <label className="field-label">Subjects</label>
+                  <div className="chip-row" style={{ marginBottom: 8 }}>
+                    {formData.subjects.map(sub => <span key={sub} className="chip active">{sub}<i className="ri-close-line" onClick={() => set({ subjects: formData.subjects.filter(s => s !== sub) })}></i></span>)}
+                  </div>
+                  <div className="subject-add">
+                    <input className="input" type="text" value={subjectInput} onChange={(e) => setSubjectInput(e.target.value)} placeholder="Add a subject, e.g. Mathematics" onKeyDown={(e) => { if (e.key === 'Enter') handleAddSubject(e); }} />
+                    <button type="button" className="btn-soft" onClick={handleAddSubject}><i className="ri-add-line"></i>Add</button>
+                  </div>
+                </div>
+                <div>
+                  <label className="field-label">Class levels</label>
+                  <div className="class-tiles twelve">
+                    {CLASSES.map((cls, i) => <button type="button" key={cls} className={`class-tile ${TINTS[i % 5]} ${formData.classLevels.includes(cls) ? 'active' : ''}`} onClick={() => toggle('classLevels', cls)}>{i + 1}</button>)}
+                  </div>
+                </div>
+                <div>
+                  <label className="field-label">Boards</label>
+                  <div className="chip-row">{BOARDS.map(b => <button type="button" key={b} className={`chip soft ${formData.boards.includes(b) ? 'active' : ''}`} onClick={() => toggle('boards', b)}>{b}</button>)}</div>
+                </div>
+              </section>
 
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Professional Bio</label>
-                <textarea 
-                  className="textarea"
-                  value={formData.bio}
-                  onChange={(e) => setFormData({...formData, bio: e.target.value})}
-                  rows="4"
-                  placeholder="Tell parents about your experience and teaching style..."
-                  style={{ width: '100%' }}
-                ></textarea>
-              </div>
+              <section className="tile" id="sec-rate">
+                <h3>Rate &amp; fee</h3>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div className="fee-input" style={{ width: 160 }}>
+                    <input className="input" type="number" min="0" value={formData.hourlyRate} onChange={(e) => set({ hourlyRate: e.target.value })} required style={{ background: 'var(--surface-2)', paddingLeft: 30 }} />
+                    <span style={{ left: 14, right: 'auto' }}>₹</span>
+                  </div>
+                  {Number(formData.hourlyRate) > 0 && <span className="fee-note">→ ₹{takeHome(formData.hourlyRate, fee)}/hr take-home after the {fee}% platform fee</span>}
+                </div>
+              </section>
 
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Boards</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '0.5rem' }}>
-                  {availableBoards.map(board => (
-                    <label key={board} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--background)', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', cursor: 'pointer' }}>
-                      <input 
-                        type="checkbox" 
-                        value={board}
-                        checked={formData.boards?.includes(board) || false}
-                        onChange={(e) => handleCheckboxChange(e, 'boards')}
-                      />
-                      {board}
-                    </label>
+              <section className="tile tile-sky" id="sec-availability">
+                <div className="row-between"><h3>Weekly availability</h3></div>
+                <div className="add-slot-row">
+                  <div><label className="field-label">Day</label><select className="select" value={newSlot.day} onChange={(e) => setNewSlot({ ...newSlot, day: e.target.value })}>{DAYS.map(d => <option key={d} value={d}>{d}</option>)}</select></div>
+                  <div><label className="field-label">Start</label><input className="input" type="time" value={newSlot.start} onChange={(e) => setNewSlot({ ...newSlot, start: e.target.value })} /></div>
+                  <div><label className="field-label">End</label><input className="input" type="time" value={newSlot.end} onChange={(e) => setNewSlot({ ...newSlot, end: e.target.value })} /></div>
+                  <button type="button" className="btn" onClick={handleAddSlot}><i className="ri-add-line"></i>Add slot</button>
+                </div>
+                <div className="week-builder">
+                  {DAYS.map(day => (
+                    <div key={day} className="week-col">
+                      <b>{day.slice(0, 3)}</b>
+                      {(formData.availability[day] || []).map((s, idx) => (
+                        <span key={idx} className="slot-pill">{s.start}–{s.end}<i className="ri-close-line" onClick={() => handleRemoveSlot(day, idx)}></i></span>
+                      ))}
+                      {!(formData.availability[day] || []).length && <span className="off">Day off</span>}
+                    </div>
                   ))}
                 </div>
-              </div>
+              </section>
 
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Subjects Taught</label>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
-                  {formData.subjects.map(sub => (
-                    <span key={sub} style={{ background: 'var(--primary-light)', color: 'var(--primary-dark)', padding: '0.25rem 0.75rem', borderRadius: '1rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                      {sub} <i className="ri-close-line" style={{cursor: 'pointer'}} onClick={() => removeSubject(sub)}></i>
-                    </span>
-                  ))}
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <input 
-                    className="input"
-                    type="text" 
-                    value={subjectInput}
-                    onChange={(e) => setSubjectInput(e.target.value)}
-                    placeholder="e.g. Mathematics"
-                    style={{ flex: 1 }}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSubject(e); } }}
-                  />
-                  <button type="button" onClick={handleAddSubject} className="btn-secondary">Add</button>
-                </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Class Levels</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.5rem' }}>
-                  {availableClasses.map(cls => (
-                    <label key={cls} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--background)', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', cursor: 'pointer' }}>
-                      <input 
-                        type="checkbox" 
-                        value={cls}
-                        checked={formData.classLevels.includes(cls)}
-                        onChange={(e) => handleCheckboxChange(e, 'classLevels')}
-                      />
-                      {cls}
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem', marginTop: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '1rem', fontWeight: 'bold', fontSize: '1.2rem' }}>Availability Schedule</label>
-                <p style={{ color: 'var(--text-light)', marginBottom: '1rem', fontSize: '0.9rem' }}>Add the time slots you are available to take classes each day. Parents will pick from these slots.</p>
-                
-                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                  <div style={{ flex: '1', minWidth: '120px' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-light)', display: 'block', marginBottom: '0.2rem' }}>Day</label>
-                    <select className="select" value={newSlot.day} onChange={(e) => setNewSlot({...newSlot, day: e.target.value})} style={{ width: '100%' }}>
-                      {daysOfWeek.map(d => <option key={d} value={d}>{d}</option>)}
-                    </select>
-                  </div>
-                  <div style={{ flex: '1', minWidth: '120px' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-light)', display: 'block', marginBottom: '0.2rem' }}>Start Time</label>
-                    <input className="input" type="time" value={newSlot.start} onChange={(e) => setNewSlot({...newSlot, start: e.target.value})} style={{ width: '100%' }} />
-                  </div>
-                  <div style={{ flex: '1', minWidth: '120px' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-light)', display: 'block', marginBottom: '0.2rem' }}>End Time</label>
-                    <input className="input" type="time" value={newSlot.end} onChange={(e) => setNewSlot({...newSlot, end: e.target.value})} style={{ width: '100%' }} />
-                  </div>
-                  <button type="button" onClick={handleAddSlot} className="btn-secondary" style={{ padding: '0.5rem 1rem' }}>Add Slot</button>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {daysOfWeek.map(day => {
-                    const slots = formData.availability[day] || [];
-                    if (slots.length === 0) return null;
-                    return (
-                      <div key={day} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
-                        <div style={{ width: '100px', fontWeight: 'bold', color: 'var(--text-dark)' }}>{day}</div>
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', flex: 1 }}>
-                          {slots.map((slot, idx) => (
-                            <span key={idx} style={{ background: '#f0fdf4', color: '#166534', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid #bbf7d0' }}>
-                              {slot.start} - {slot.end}
-                              <i className="ri-close-circle-fill" style={{cursor: 'pointer', color: '#dc2626'}} onClick={() => handleRemoveSlot(day, idx)}></i>
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              <section className="tile" id="sec-bio">
+                <h3>Professional bio</h3>
+                <textarea className="textarea" value={formData.bio} onChange={(e) => set({ bio: e.target.value })} rows="4" placeholder="Tell parents about your experience and teaching style..."></textarea>
+              </section>
             </>
           )}
+        </div>
 
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-            <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Saving...' : 'Save Profile'}
-            </button>
-            <button type="button" className="btn-outline" onClick={() => navigate('/profile')}>
-              Cancel
-            </button>
+        <div className="save-bar">
+          <p>{changes ? `${changes} unsaved change${changes > 1 ? 's' : ''}` : 'No changes yet'}</p>
+          <button type="button" className="ghost" onClick={changes ? discard : () => navigate('/profile')}>{changes ? 'Discard' : 'Cancel'}</button>
+          <button type="submit" className="btn-on-ink" disabled={loading}>{loading ? 'Saving…' : 'Save profile'}</button>
+        </div>
+      </form>
+
+      {cropSrc && (
+        <div className="dlg-backdrop">
+          <div className="dlg" role="dialog" aria-modal="true">
+            <span className="dlg-grab"></span>
+            <h3>Crop profile photo</h3>
+            <div className="crop-box">
+              <Cropper image={cropSrc} crop={crop} zoom={zoom} aspect={1} cropShape="round" showGrid={false} onCropChange={setCrop} onCropComplete={(_, px) => setCroppedAreaPixels(px)} onZoomChange={setZoom} />
+            </div>
+            <div className="zoom-row"><i className="ri-zoom-out-line"></i><input type="range" min="1" max="3" step="0.05" value={zoom} onChange={(e) => setZoom(Number(e.target.value))} /><i className="ri-zoom-in-line"></i></div>
+            <div className="dlg-actions">
+              <button type="button" className="btn-soft" onClick={() => setCropSrc(null)}>Cancel</button>
+              <button type="button" className="btn" onClick={confirmCrop}>Save photo</button>
+            </div>
           </div>
-        </form>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

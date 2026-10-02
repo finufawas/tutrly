@@ -1,14 +1,43 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db, auth } from '../firebase';
 import { signOut, deleteUser } from 'firebase/auth';
-import { doc, deleteDoc } from 'firebase/firestore';
+import { doc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { useNavigate, Link } from 'react-router-dom';
-import tutorPlaceholder from '../assets/images/tutor_1.jpg';
+import Avatar from '../components/Avatar';
+import { useFeedback } from '../components/Feedback';
+import { classRange } from '../utils/tutor';
+import { fetchFeeSettings, effectiveFee, takeHome } from '../utils/fees';
 
 function MyProfile() {
   const { currentUser, userData } = useAuth();
+  const { toast, confirm } = useFeedback();
   const navigate = useNavigate();
+  const [fee, setFee] = useState(5);
+  const [stats, setStats] = useState({ avg: null, done: 0 });
+  const [theme, setTheme] = useState(document.documentElement.getAttribute('data-theme') || 'light');
+  const isTutor = userData?.role === 'tutor';
+
+  useEffect(() => { fetchFeeSettings().then(s => setFee(effectiveFee(s))); }, []);
+
+  useEffect(() => {
+    if (!isTutor || !currentUser) return;
+    (async () => {
+      try {
+        const snap = await getDocs(query(collection(db, 'bookings'), where('tutorId', '==', currentUser.uid)));
+        let sum = 0, n = 0, done = 0;
+        snap.forEach(d => { const b = d.data(); if (b.status === 'completed') done++; if (b.rating) { sum += b.rating; n++; } });
+        setStats({ avg: n ? (sum / n).toFixed(1) : null, done });
+      } catch (e) { /* stats are optional */ }
+    })();
+  }, [isTutor, currentUser]);
+
+  const toggleTheme = () => {
+    const next = theme === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    setTheme(next);
+  };
 
   const handleLogout = async () => {
     try {
@@ -16,101 +45,122 @@ function MyProfile() {
       navigate('/');
     } catch (error) {
       console.error('Failed to log out', error);
+      toast('Failed to sign out.', 'error');
     }
   };
 
   const handleDeleteAccount = async () => {
-    if (window.confirm("Are you sure you want to delete your account? This cannot be undone.")) {
-      try {
-        await deleteDoc(doc(db, 'users', currentUser.uid));
-        await deleteUser(currentUser);
-        navigate('/');
-      } catch (error) {
-        if (error.code === 'auth/requires-recent-login') {
-          alert("Please log out and log back in to verify your identity before deleting your account.");
-        } else {
-          alert("Failed to delete account: " + error.message);
-        }
+    const ok = await confirm({
+      tone: 'danger',
+      title: 'Delete your account?',
+      message: 'This removes your profile and booking history. It cannot be undone.',
+      cancelText: 'Keep account',
+      confirmText: 'Delete'
+    });
+    if (!ok) return;
+    try {
+      await deleteDoc(doc(db, 'users', currentUser.uid));
+      await deleteUser(currentUser);
+      navigate('/');
+    } catch (error) {
+      if (error.code === 'auth/requires-recent-login') {
+        toast('Please sign out and sign back in to verify your identity before deleting your account.', 'warning');
+      } else {
+        toast('Failed to delete account: ' + error.message, 'error');
       }
     }
   };
 
-  if (!userData) return <div style={{ padding: '8rem 5%', textAlign: 'center' }}>Loading...</div>;
+  const shareProfile = async () => {
+    const text = `Hi! I'm teaching ${userData?.subjects?.[0] || 'students'} in ${userData?.city || 'your area'}. Book a home class with me on Tutrly: ${window.location.origin}/tutor/${currentUser.uid}`;
+    try {
+      if (navigator.share) { await navigator.share({ text }); return; }
+      await navigator.clipboard.writeText(text);
+      toast('Share it on WhatsApp to get more students.', 'info', { title: 'Profile link copied' });
+    } catch (e) { /* share sheet dismissed */ }
+  };
 
-  const isTutor = userData.role === 'tutor';
+  if (!userData) return <div className="page"><div className="spinner-container"><div className="spinner"></div></div></div>;
 
   return (
-    <div style={{ padding: '8rem 5% 4rem', minHeight: 'calc(100vh - 100px)' }}>
-      <div style={{ background: 'var(--white)', padding: '3rem', borderRadius: '1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', maxWidth: '800px', margin: '0 auto' }}>
-        
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-          <h2 style={{ fontSize: '2rem', margin: 0 }}>My Profile</h2>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            {isTutor && (
-              <button 
-                type="button" 
-                className="btn-light" 
-                onClick={() => {
-                  navigator.clipboard.writeText(`Hi! I'm teaching ${userData?.subjects?.[0] || 'students'} in ${userData?.city || 'your area'}. Book a home class with me on Tutrly: ${window.location.origin}/tutor/${currentUser.uid}`);
-                  alert('Profile link copied! Share it on WhatsApp to get more students.');
-                }}
-              >
-                <i className="ri-share-forward-line"></i> Share Profile
-              </button>
-            )}
-            <Link to="/edit-profile" className="btn-secondary">
-              Edit Profile
-            </Link>
-          </div>
-        </div>
+    <div className="page">
+      <div className="profile-wrap">
+        <div className="dash-head"><h1>My Profile</h1></div>
 
-        <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap' }}>
-          {isTutor && (
-            <img 
-              src={userData.photoURL || tutorPlaceholder} 
-              alt="Profile" 
-              style={{ width: '120px', height: '120px', borderRadius: '50%', objectFit: 'cover', border: '4px solid #f1f5f9' }}
-            />
+        <div className="me-bento">
+          <div className={`me-hero ${isTutor ? '' : 'parent'}`}>
+            {isTutor && <div className="photo"><Avatar user={userData} size={200} radius={0} tint={false} /></div>}
+            <div className="info">
+              {isTutor && (userData.isVerified
+                ? <span className="verified-badge" style={{ alignSelf: 'flex-start' }}><i className="ri-shield-check-fill"></i>Verified tutor</span>
+                : <span className="pill pill-warning" style={{ alignSelf: 'flex-start' }}>Pending verification</span>)}
+              {!isTutor && <span className="verified-badge" style={{ alignSelf: 'flex-start', textTransform: 'capitalize' }}>{userData.role} account</span>}
+              <h1>{userData.name}</h1>
+              <p>{userData.email}</p>
+              {userData.city && <p><i className="ri-map-pin-2-line"></i> {userData.city}{userData.location ? ' · GPS saved' : ''}</p>}
+              {!isTutor && userData.studentName && <p><i className="ri-user-smile-line"></i> {userData.studentName}{userData.studentClass ? ` · ${userData.studentClass}` : ''}</p>}
+              <div className="me-actions">
+                {isTutor && <button className="btn" onClick={shareProfile}><i className="ri-share-forward-line"></i>Share profile</button>}
+                <Link to="/edit-profile" className={isTutor ? 'btn-light' : 'btn'}><i className="ri-pencil-line"></i>Edit profile</Link>
+              </div>
+            </div>
+          </div>
+
+          {isTutor ? (
+            <>
+              <div className="stat-tile tile-mint">
+                <p className="eyebrow">Hourly rate</p>
+                <p className="big-num">₹{userData.hourlyRate || 0}</p>
+                <p style={{ fontWeight: 700, fontSize: '0.8rem' }}>You take home ₹{takeHome(userData.hourlyRate, fee)} after the {fee}% fee</p>
+              </div>
+              <div className="stat-tile tile-butter">
+                <p className="eyebrow">Rating</p>
+                <p className="big-num">{stats.avg || 'New'}</p>
+                <p style={{ fontWeight: 700, fontSize: '0.8rem' }}>from {stats.done} completed class{stats.done !== 1 ? 'es' : ''}</p>
+              </div>
+              <div className="tile me-wide" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                <p className="eyebrow">Teaches</p>
+                <div className="chip-row">
+                  {userData.subjects?.map((s, i) => <span key={s} className={`tag tint-${i % 5}`}>{s}</span>)}
+                  {userData.classLevels?.length > 0 && <span className="tag tint-3">{classRange(userData.classLevels)}</span>}
+                  {userData.boards?.length > 0 && <span className="tag" style={{ background: 'var(--surface-2)' }}>{userData.boards.join(' · ')}</span>}
+                </div>
+                <p style={{ color: 'var(--ink-2)', whiteSpace: 'pre-wrap', margin: 0 }}>{userData.bio || 'No bio added yet.'}</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="stat-tile tile-mint">
+                <p className="eyebrow">Student</p>
+                <p className="big-num" style={{ fontSize: '2rem' }}>{userData.studentName || '—'}</p>
+                <p style={{ fontWeight: 700 }}>{userData.studentClass || 'Class not set'}</p>
+              </div>
+              <div className="stat-tile tile-sky">
+                <p className="eyebrow">Board</p>
+                <p className="big-num" style={{ fontSize: '2rem' }}>{userData.studentBoard?.join(' · ') || '—'}</p>
+                <p style={{ fontWeight: 700 }}>{userData.phone || 'No phone added'}</p>
+              </div>
+            </>
           )}
-          <div>
-            <h3 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>{userData.name}</h3>
-            <p style={{ color: 'var(--text-light)', marginBottom: '0.5rem' }}>{userData.email}</p>
-            <span style={{ background: 'var(--primary-light)', color: 'var(--primary-dark)', padding: '0.25rem 0.75rem', borderRadius: '1rem', fontSize: '0.85rem', textTransform: 'capitalize' }}>
-              {userData.role} Account
-            </span>
+
+          <div className="settings-list me-full">
+            <button className="setting-item" onClick={toggleTheme}>
+              <span className="ic tint-3"><i className={theme === 'light' ? 'ri-moon-line' : 'ri-sun-line'}></i></span>
+              <span style={{ flex: 1 }}><b>Dark theme</b><small>Also in the top navigation</small></span>
+              <span className={`switch ${theme === 'dark' ? 'on' : ''}`}></span>
+            </button>
+            <button className="setting-item" onClick={handleLogout}>
+              <span className="ic tint-0"><i className="ri-logout-box-r-line"></i></span>
+              <span style={{ flex: 1 }}><b>Sign out</b><small>On this device</small></span>
+              <i className="ri-arrow-right-s-line" style={{ fontSize: '1.2rem', color: 'var(--muted)' }}></i>
+            </button>
+            <button className="setting-item danger" onClick={handleDeleteAccount}>
+              <span className="ic" style={{ background: 'var(--peach)' }}><i className="ri-delete-bin-6-line"></i></span>
+              <span style={{ flex: 1 }}><b>Delete account</b><small>Permanently remove your data</small></span>
+              <i className="ri-arrow-right-s-line" style={{ fontSize: '1.2rem' }}></i>
+            </button>
           </div>
         </div>
-
-        {isTutor && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid var(--border-color)' }}>
-            <div>
-              <h4 style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Hourly Rate</h4>
-              <p>₹{userData.hourlyRate || 0} / hr</p>
-            </div>
-            <div>
-              <h4 style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Bio</h4>
-              <p style={{ color: 'var(--text-dark)', whiteSpace: 'pre-wrap' }}>{userData.bio || 'No bio added yet.'}</p>
-            </div>
-            <div>
-              <h4 style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Subjects</h4>
-              <p>{userData.subjects?.length > 0 ? userData.subjects.join(', ') : 'None listed'}</p>
-            </div>
-            <div>
-              <h4 style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Class Levels</h4>
-              <p>{userData.classLevels?.length > 0 ? userData.classLevels.join(', ') : 'None listed'}</p>
-            </div>
-          </div>
-        )}
-
-        <div style={{ display: 'flex', gap: '1rem', marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid var(--border-color)' }}>
-          <button onClick={handleLogout} className="btn-outline">
-            Sign Out
-          </button>
-          <button onClick={handleDeleteAccount} className="btn-outline" style={{ borderColor: 'red', color: 'red' }}>
-            Delete Account
-          </button>
-        </div>
-
       </div>
     </div>
   );

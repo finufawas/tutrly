@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Avatar from './Avatar';
+import Logo from './Logo';
 
 function Navbar() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const isHomePage = location.pathname === '/';
-  if (location.pathname === '/admin') return null;
   const { currentUser, userData } = useAuth();
   const isTutor = userData?.role === 'tutor';
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
@@ -18,6 +18,9 @@ function Navbar() {
   }, [theme]);
 
   useEffect(() => { setOpen(false); }, [location.pathname]);
+
+  // Admin has its own top bar. (Return after all hooks so hook order never changes.)
+  if (location.pathname === '/admin') return null;
 
   const toggleTheme = () => setTheme(t => (t === 'light' ? 'dark' : 'light'));
 
@@ -35,7 +38,7 @@ function Navbar() {
   return (
     <nav className="navbar">
       <div className="nav-pill">
-        <Link to="/" className="logo"><span className="logo-mark"><i className="ri-book-open-fill"></i></span>Tutrly</Link>
+        <Link to="/" className="logo" aria-label="Tutrly home"><Logo /></Link>
 
         <div className={`nav-links${open ? ' open' : ''}`}>
           {currentUser && !isTutor && <NavLink to="/search" className={cls}>Find tutors</NavLink>}
