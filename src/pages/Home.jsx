@@ -101,7 +101,6 @@ function Home() {
               <p>Connect with students in your area and manage your classes all in one place.</p>
               <div className="hero-actions">
                 <button className="btn btn-lg" onClick={() => navigate('/dashboard')}><i className="ri-macbook-line"></i> Manage My Classes</button>
-                <button className="btn-light btn-lg" onClick={() => { navigator.clipboard.writeText(`Hi! I'm teaching ${userData?.subjects?.[0] || 'students'} in ${userData?.city || 'your area'}. Book a home class with me on Tutrly: ${window.location.origin}/tutor/${currentUser.uid}`); alert('Profile link copied! Share it on WhatsApp to get more students.'); }}><i className="ri-share-forward-line"></i> Share Profile</button>
               </div>
             </>
           ) : (
