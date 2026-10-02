@@ -3,6 +3,33 @@ import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
+import Cropper from 'react-easy-crop';
+
+const getCroppedImg = (imageSrc, pixelCrop) => {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.src = imageSrc;
+    image.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 250;
+      canvas.height = 250;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(
+        image,
+        pixelCrop.x,
+        pixelCrop.y,
+        pixelCrop.width,
+        pixelCrop.height,
+        0,
+        0,
+        250,
+        250
+      );
+      resolve(canvas.toDataURL('image/jpeg', 0.8));
+    };
+    image.onerror = (error) => reject(error);
+  });
+};
 
 function EditProfile() {
   const { currentUser, userData } = useAuth();
@@ -12,6 +39,7 @@ function EditProfile() {
   
   const [formData, setFormData] = useState({
     name: '',
+    city: '',
     bio: '',
     hourlyRate: '',
     subjects: [],
@@ -26,6 +54,11 @@ function EditProfile() {
   
   const [newSlot, setNewSlot] = useState({ day: 'Monday', start: '', end: '' });
 
+  const [cropSrc, setCropSrc] = useState(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+
   const availableClasses = [...Array(12)].map((_, i) => `Class ${i+1}`);
   const availableBoards = ['State', 'CBSE', 'ICSE'];
 
@@ -33,6 +66,7 @@ function EditProfile() {
     if (userData) {
       setFormData({
         name: userData.name || '',
+        city: userData.city || '',
         bio: userData.bio || '',
         hourlyRate: userData.hourlyRate || '',
         subjects: userData.subjects || [],
@@ -105,39 +139,23 @@ function EditProfile() {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 200;
-          const MAX_HEIGHT = 200;
-          let width = img.width;
-          let height = img.height;
-
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          
-          // Compress to Base64 string (JPEG, 70% quality)
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-          setFormData(prev => ({ ...prev, photoURL: dataUrl }));
-        };
-        img.src = event.target.result;
-      };
+      reader.onload = (event) => setCropSrc(event.target.result);
       reader.readAsDataURL(file);
+    }
+  };
+
+  const onCropComplete = (croppedArea, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  };
+
+  const confirmCrop = async () => {
+    try {
+      const croppedBase64 = await getCroppedImg(cropSrc, croppedAreaPixels);
+      setFormData(prev => ({ ...prev, photoURL: croppedBase64 }));
+      setCropSrc(null);
+    } catch (e) {
+      console.error(e);
+      alert('Error cropping image');
     }
   };
 
@@ -150,6 +168,7 @@ function EditProfile() {
       const userRef = doc(db, 'users', currentUser.uid);
       await updateDoc(userRef, {
         name: formData.name,
+        city: formData.city,
         bio: formData.bio,
         hourlyRate: Number(formData.hourlyRate),
         subjects: formData.subjects,
@@ -175,6 +194,28 @@ function EditProfile() {
         
         {error && <div style={{ color: 'red', marginBottom: '1rem', padding: '1rem', background: '#fee2e2', borderRadius: '0.5rem' }}>{error}</div>}
 
+        {cropSrc && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ position: 'relative', width: '90%', maxWidth: '500px', height: '400px', background: '#222', borderRadius: '1rem', overflow: 'hidden' }}>
+              <Cropper
+                image={cropSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape="round"
+                showGrid={false}
+                onCropChange={setCrop}
+                onCropComplete={onCropComplete}
+                onZoomChange={setZoom}
+              />
+            </div>
+            <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem' }}>
+              <button type="button" className="btn" onClick={confirmCrop}>Save Profile Picture</button>
+              <button type="button" className="btn-light" onClick={() => setCropSrc(null)}>Cancel</button>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Profile Picture</label>
@@ -195,6 +236,19 @@ function EditProfile() {
               type="text" 
               value={formData.name}
               onChange={(e) => setFormData({...formData, name: e.target.value})}
+              required
+              style={{ width: '100%' }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>City / Location</label>
+            <input 
+              className="input"
+              type="text" 
+              value={formData.city}
+              onChange={(e) => setFormData({...formData, city: e.target.value})}
+              placeholder="e.g. Kochi, Kerala"
               required
               style={{ width: '100%' }}
             />
