@@ -23,9 +23,12 @@ import './ui.css';
 
 // Requires login — redirects guests to /login
 function ProtectedRoute({ children }) {
-  const { currentUser } = useAuth();
+  const { currentUser, userData } = useAuth();
   if (!currentUser) {
     return <Navigate to="/login" replace />;
+  }
+  if (userData?.role === 'admin') {
+    return <Navigate to="/admin" replace />;
   }
   return children;
 }

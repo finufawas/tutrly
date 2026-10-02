@@ -40,6 +40,7 @@ function MyProfile() {
   };
 
   const handleLogout = async () => {
+    if (!window.confirm("Are you sure you want to sign out?")) return;
     try {
       await signOut(auth);
       navigate('/');

@@ -78,6 +78,7 @@ function AdminDashboard() {
   };
 
   const handleSignOut = async () => {
+    if (!window.confirm("Are you sure you want to sign out?")) return;
     try { await signOut(auth); navigate('/'); } catch (err) { console.error(err); }
   };
 
