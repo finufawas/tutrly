@@ -150,7 +150,6 @@ function EditProfile() {
     toast('Copied to weekdays');
   };
 
-  const clearDay = () => set({ availability: { ...form.availability, [day]: (form.availability[day] || []).filter(r => isLocked(day, r)) } });
 
   // ---------- misc handlers ----------
   const addSubject = (s) => {
@@ -273,7 +272,6 @@ function EditProfile() {
           <div><h2>When can you teach?</h2><p>Add any time range in 15-minute steps. Parents only see these times.</p></div>
           <div className="chip-row">
             <button type="button" className="chip soft" onClick={copyToWeekdays}><i className="ri-file-copy-line"></i>Copy {day.slice(0, 3)} → weekdays</button>
-            <button type="button" className="chip soft" onClick={clearDay}>Clear {day.slice(0, 3)}</button>
           </div>
         </div>
         <div className="eb-days">
