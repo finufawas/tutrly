@@ -43,11 +43,25 @@ function MyProfile() {
     <div style={{ padding: '8rem 5% 4rem', minHeight: 'calc(100vh - 100px)' }}>
       <div style={{ background: 'var(--white)', padding: '3rem', borderRadius: '1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', maxWidth: '800px', margin: '0 auto' }}>
         
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '2rem' }}>My Profile</h2>
-          <Link to="/edit-profile" className="btn-secondary">
-            Edit Profile
-          </Link>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <h2 style={{ fontSize: '2rem', margin: 0 }}>My Profile</h2>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {isTutor && (
+              <button 
+                type="button" 
+                className="btn-light" 
+                onClick={() => {
+                  navigator.clipboard.writeText(`Hi! I'm teaching ${userData?.subjects?.[0] || 'students'} in ${userData?.city || 'your area'}. Book a home class with me on Tutrly: ${window.location.origin}/tutor/${currentUser.uid}`);
+                  alert('Profile link copied! Share it on WhatsApp to get more students.');
+                }}
+              >
+                <i className="ri-share-forward-line"></i> Share Profile
+              </button>
+            )}
+            <Link to="/edit-profile" className="btn-secondary">
+              Edit Profile
+            </Link>
+          </div>
         </div>
 
         <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap' }}>

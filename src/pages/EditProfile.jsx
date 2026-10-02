@@ -202,21 +202,7 @@ function EditProfile() {
         <button type="button" className="back-btn desktop-hidden" style={{ marginBottom: '1.5rem' }} onClick={() => navigate(-1)}>
           <i className="ri-arrow-left-line"></i>Back
         </button>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-          <h2 style={{ fontSize: '2rem', margin: 0 }}>{userData?.role === 'tutor' ? 'Edit Tutor Profile' : 'Edit Profile'}</h2>
-          {userData?.role === 'tutor' && (
-            <button 
-              type="button" 
-              className="btn-light btn-sm" 
-              onClick={() => {
-                navigator.clipboard.writeText(`Hi! I'm teaching ${userData?.subjects?.[0] || 'students'} in ${userData?.city || 'your area'}. Book a home class with me on Tutrly: ${window.location.origin}/tutor/${currentUser.uid}`);
-                alert('Profile link copied! Share it on WhatsApp to get more students.');
-              }}
-            >
-              <i className="ri-share-forward-line"></i> Share Profile
-            </button>
-          )}
-        </div>
+        <h2 style={{ fontSize: '2rem', marginBottom: '2rem' }}>{userData?.role === 'tutor' ? 'Edit Tutor Profile' : 'Edit Profile'}</h2>
         
         {error && <div style={{ color: 'red', marginBottom: '1rem', padding: '1rem', background: '#fee2e2', borderRadius: '0.5rem' }}>{error}</div>}
 
