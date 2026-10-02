@@ -190,6 +190,9 @@ function EditProfile() {
   return (
     <div style={{ padding: '8rem 5% 4rem', minHeight: 'calc(100vh - 100px)' }}>
       <div style={{ background: 'var(--white)', padding: '3rem', borderRadius: '1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', maxWidth: '800px', margin: '0 auto' }}>
+        <button type="button" className="back-btn desktop-hidden" style={{ marginBottom: '1.5rem' }} onClick={() => navigate(-1)}>
+          <i className="ri-arrow-left-line"></i>Back
+        </button>
         <h2 style={{ fontSize: '2rem', marginBottom: '2rem' }}>{userData?.role === 'tutor' ? 'Edit Tutor Profile' : 'Edit Profile'}</h2>
         
         {error && <div style={{ color: 'red', marginBottom: '1rem', padding: '1rem', background: '#fee2e2', borderRadius: '0.5rem' }}>{error}</div>}

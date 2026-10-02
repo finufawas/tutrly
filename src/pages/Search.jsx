@@ -77,6 +77,9 @@ function Search() {
   return (
     <div className="page">
       <div className="container">
+        <button className="back-btn desktop-hidden" style={{ marginBottom: '1rem' }} onClick={() => navigate(-1)}>
+          <i className="ri-arrow-left-line"></i>Back
+        </button>
         <form className="query-bar" onSubmit={applySubject}>
           <div className="qf">
             <select value={classParam} onChange={(e) => setParam('class', e.target.value)}>

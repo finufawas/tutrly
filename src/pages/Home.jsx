@@ -100,7 +100,7 @@ function Home() {
               <h1>Grow Your Teaching <span className="accent">Career.</span></h1>
               <p>Connect with students in your area and manage your classes all in one place.</p>
               <div className="hero-actions">
-                <button className="btn btn-lg" onClick={() => navigate('/dashboard')}><i className="ri-dashboard-line"></i> Go to Dashboard</button>
+                <button className="btn btn-lg" onClick={() => navigate('/dashboard')}><i className="ri-macbook-line"></i> Manage My Classes</button>
                 <button className="btn-light btn-lg" onClick={() => navigate('/edit-profile')}><i className="ri-time-line"></i> Update Availability</button>
               </div>
             </>
