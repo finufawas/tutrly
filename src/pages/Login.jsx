@@ -138,20 +138,20 @@ function Login() {
               <label className="field-label" style={{ margin: 0 }}>Password</label>
               {isLogin && <button type="button" className="text-btn" onClick={handleResetPassword}>Forgot Password?</button>}
             </div>
-            <div style={{ position: 'relative' }}>
+            <div className="pw-field">
               <input className="input" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={isLogin ? '6' : '8'} style={{ paddingRight: '2.5rem' }} />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '0.8rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', display: 'flex', alignItems: 'center' }}>
-                <i className={showPassword ? "ri-eye-off-line" : "ri-eye-line"} style={{ fontSize: '1.2rem' }}></i>
+              <button type="button" className="pw-eye" aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)}>
+                <i className={showPassword ? "ri-eye-off-line" : "ri-eye-line"}></i>
               </button>
             </div>
           </div>
           {!isLogin && (
             <div>
               <label className="field-label">Confirm Password</label>
-              <div style={{ position: 'relative' }}>
+              <div className="pw-field">
                 <input className={`input ${mismatch ? 'invalid' : ''}`} type={showPassword ? "text" : "password"} placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength="8" style={{ paddingRight: '2.5rem' }} />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '0.8rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', display: 'flex', alignItems: 'center' }}>
-                  <i className={showPassword ? "ri-eye-off-line" : "ri-eye-line"} style={{ fontSize: '1.2rem' }}></i>
+                <button type="button" className="pw-eye" aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)}>
+                  <i className={showPassword ? "ri-eye-off-line" : "ri-eye-line"}></i>
                 </button>
               </div>
               {mismatch && <span className="field-error"><i className="ri-error-warning-line"></i> Passwords do not match</span>}

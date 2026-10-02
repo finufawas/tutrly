@@ -144,9 +144,13 @@ function Home() {
             <span className="icon"><i className="ri-shield-check-fill"></i></span>
             <div><p className="big-num">100%</p><p style={{ fontWeight: 700 }}>tutors verified</p></div>
           </div>
-          <div className="stat-tile tile-peach">
-            <p style={{ fontWeight: 700 }}>Classes at</p>
-            <p className="big-num" style={{ fontSize: '2.1rem' }}>your home</p>
+          <div className="stat-tile tile-peach home-benefits">
+            <h3><i className="ri-home-heart-fill"></i>Classes at your home</h3>
+            <ul>
+              <li><span><i className="ri-check-line"></i></span>No travel for your child</li>
+              <li><span><i className="ri-check-line"></i></span>One-to-one attention</li>
+              <li><span><i className="ri-check-line"></i></span>You're close by</li>
+            </ul>
           </div>
           {!isTutor && (
             <div className="subjects-tile">

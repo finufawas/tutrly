@@ -1,3 +1,4 @@
+import { LogoMark } from './Logo';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 /*
@@ -97,10 +98,12 @@ export function FeedbackProvider({ children }) {
           <div className={`dlg dlg-${tone}`} role="dialog" aria-modal="true" aria-labelledby="dlg-title">
             <span className="dlg-grab"></span>
             {dialog.icon !== false && <span className={`dlg-icon tone-${tone}`}><i className={dialog.icon || TONE_ICON[tone]}></i></span>}
-            <div>
-              <h3 id="dlg-title">{dialog.title}</h3>
-              {dialog.message && <p className="dlg-msg">{dialog.message}</p>}
-            </div>
+            {(dialog.title || dialog.message) && (
+              <div>
+                {dialog.title && <h3 id="dlg-title">{dialog.title}</h3>}
+                {dialog.message && <p className="dlg-msg">{dialog.message}</p>}
+              </div>
+            )}
             {dialog.body}
             {input && (
               <div className="dlg-field">
@@ -129,3 +132,17 @@ export function FeedbackProvider({ children }) {
     </FeedbackContext.Provider>
   );
 }
+
+// Sign-out confirm (design SB: friendly goodbye)
+export const signOutDialog = (user) => ({
+  icon: false,
+  body: (
+    <div className="so-head">
+      <span className="so-mark"><LogoMark size={44} /></span>
+      <h3 id="dlg-title">See you soon{user?.name ? `, ${user.name.split(' ')[0]}` : ''}</h3>
+      <p>Sign out of Tutrly on this device?</p>
+    </div>
+  ),
+  cancelText: 'Cancel',
+  confirmText: 'Sign out'
+});

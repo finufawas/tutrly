@@ -6,7 +6,7 @@ import { collection, query, getDocs, doc, updateDoc, deleteDoc, setDoc } from 'f
 import { useNavigate } from 'react-router-dom';
 import Logo from '../components/Logo';
 import Avatar from '../components/Avatar';
-import { useFeedback } from '../components/Feedback';
+import { useFeedback, signOutDialog } from '../components/Feedback';
 import { toISO, formatDate, classRange, to12h } from '../utils/tutor';
 import { fetchFeeSettings, effectiveFee, takeHome } from '../utils/fees';
 
@@ -78,12 +78,7 @@ function AdminDashboard() {
   };
 
   const handleSignOut = async () => {
-    const ok = await confirm({
-      title: 'Sign out?',
-      message: 'Are you sure you want to sign out of the admin panel?',
-      cancelText: 'Cancel',
-      confirmText: 'Sign out'
-    });
+    const ok = await confirm(signOutDialog(userData));
     if (!ok) return;
     try { await signOut(auth); navigate('/'); } catch (err) { console.error(err); }
   };

@@ -427,3 +427,33 @@ body.no-scroll { overflow: hidden; }
     .pv-num { width: 36px; height: 36px; border-radius: 12px; font-size: 0.9rem; }
     .pv-sec p { font-size: 0.95rem; }
 }
+
+
+/* ============ Home tile HD · sign-out SB · password field ============ */
+.home-benefits { justify-content: center; gap: 8px; padding: 16px 18px; }
+.home-benefits h3 { font-size: 1.1rem; display: flex; align-items: center; gap: 6px; color: var(--ink); }
+.home-benefits h3 i { color: var(--peach-ink); }
+.home-benefits ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.home-benefits li { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 700; color: var(--peach-ink); }
+.home-benefits li span { width: 18px; height: 18px; border-radius: 50%; background: var(--surface); color: var(--peach-ink); display: flex; align-items: center; justify-content: center; font-size: 0.72rem; flex: none; }
+.so-head { border-radius: 24px; background: var(--lilac); padding: 22px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+.so-mark { width: 72px; height: 72px; border-radius: 24px; background: var(--surface); display: flex; align-items: center; justify-content: center; }
+.so-head h3 { font-size: 1.45rem; color: var(--ink); }
+.so-head p { margin: 0; font-weight: 600; color: var(--ink-2); }
+.settings-list.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pw-field { position: relative; }
+.pw-field .input { padding-right: 52px; }
+.pw-eye { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; border: none; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+.pw-eye:hover, .pw-eye[aria-pressed="true"] { background: var(--surface); color: var(--ink); }
+@media (max-width: 1100px) { .settings-list.two { grid-template-columns: 1fr; } }
+@media (max-width: 768px) {
+    .home-benefits { padding: 12px 14px; gap: 5px; }
+    .home-benefits h3 { font-size: 0.9rem; }
+    .home-benefits li { font-size: 0.72rem; gap: 6px; }
+    .home-benefits li span { width: 16px; height: 16px; }
+    .so-head { padding: 16px; flex-direction: row; text-align: left; gap: 12px; }
+    .so-mark { width: 52px; height: 52px; border-radius: 18px; flex: none; }
+    .so-mark svg { width: 32px; height: 32px; }
+    .so-head h3 { font-size: 1.15rem; }
+    .so-head p { font-size: 0.85rem; }
+}

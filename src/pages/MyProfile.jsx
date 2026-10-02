@@ -5,7 +5,7 @@ import { signOut, deleteUser } from 'firebase/auth';
 import { doc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { useNavigate, Link } from 'react-router-dom';
 import Avatar from '../components/Avatar';
-import { useFeedback } from '../components/Feedback';
+import { useFeedback, signOutDialog } from '../components/Feedback';
 import { classRange } from '../utils/tutor';
 import { fetchFeeSettings, effectiveFee, takeHome } from '../utils/fees';
 
@@ -40,12 +40,7 @@ function MyProfile() {
   };
 
   const handleLogout = async () => {
-    const ok = await confirm({
-      title: 'Sign out?',
-      message: 'Are you sure you want to sign out of your account?',
-      cancelText: 'Cancel',
-      confirmText: 'Sign out'
-    });
+    const ok = await confirm(signOutDialog(userData));
     if (!ok) return;
 
     try {
@@ -151,12 +146,7 @@ function MyProfile() {
             </>
           )}
 
-          <div className="settings-list me-full">
-            <button className="setting-item" onClick={toggleTheme}>
-              <span className="ic tint-3"><i className={theme === 'light' ? 'ri-moon-line' : 'ri-sun-line'}></i></span>
-              <span style={{ flex: 1 }}><b>Dark theme</b><small>Also in the top navigation</small></span>
-              <span className={`switch ${theme === 'dark' ? 'on' : ''}`}></span>
-            </button>
+          <div className="settings-list me-full two">
             <button className="setting-item" onClick={handleLogout}>
               <span className="ic tint-0"><i className="ri-logout-box-r-line"></i></span>
               <span style={{ flex: 1 }}><b>Sign out</b><small>On this device</small></span>
