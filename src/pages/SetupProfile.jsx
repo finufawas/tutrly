@@ -25,6 +25,10 @@ function SetupProfile() {
   const [classLevels, setClassLevels] = useState([]);
   const [boards, setBoards] = useState([]);
   const [availability, setAvailability] = useState({});
+  // Location
+  const [city, setCity] = useState(userData?.city || '');
+  const [locationObj, setLocationObj] = useState(userData?.location || null);
+  const [locLoading, setLocLoading] = useState(false);
 
   const allSubjects = ['Mathematics', 'Science', 'English', 'Hindi', 'Social Studies', 'Computer Science', 'Physics', 'Chemistry', 'Biology'];
   const allBoards = ['State', 'CBSE', 'ICSE'];
@@ -45,6 +49,24 @@ function SetupProfile() {
     setAvailability({ ...availability, [day]: updated });
   };
 
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      setError('Geolocation is not supported by your browser.');
+      return;
+    }
+    setLocLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocationObj({ lat: position.coords.latitude, lng: position.coords.longitude });
+        setLocLoading(false);
+      },
+      (err) => {
+        setError('Failed to get location. Please allow location access or type your city manually.');
+        setLocLoading(false);
+      }
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(''); setLoading(true);
@@ -56,12 +78,14 @@ function SetupProfile() {
         if (boards.length === 0) throw new Error('Please select at least one board.');
         if (!hourlyRate || Number(hourlyRate) <= 0) throw new Error('Please enter a valid hourly rate.');
         if (!bio.trim()) throw new Error('Please write a short bio.');
-        await updateDoc(userRef, { subjects, classLevels, boards, hourlyRate: Number(hourlyRate), bio: bio.trim(), availability, profileComplete: true });
+        if (!city.trim()) throw new Error('Please enter your city.');
+        await updateDoc(userRef, { subjects, classLevels, boards, hourlyRate: Number(hourlyRate), bio: bio.trim(), availability, city: city.trim(), location: locationObj, profileComplete: true });
       } else {
         if (!studentName.trim()) throw new Error("Please enter the student's name.");
         if (!studentClass) throw new Error('Please select the class level.');
         if (studentBoard.length === 0) throw new Error('Please select at least one board.');
-        await updateDoc(userRef, { studentName: studentName.trim(), studentClass, studentBoard, phone: phone.trim(), profileComplete: true });
+        if (!city.trim()) throw new Error('Please enter your city.');
+        await updateDoc(userRef, { studentName: studentName.trim(), studentClass, studentBoard, phone: phone.trim(), city: city.trim(), location: locationObj, profileComplete: true });
       }
       navigate('/');
     } catch (err) {
@@ -78,12 +102,13 @@ function SetupProfile() {
     ? [
         { label: 'Teaching', sub: 'Subjects, classes, boards', done: subjects.length && classLevels.length && boards.length },
         { label: 'Availability', sub: 'Weekly time slots', done: hasSlots },
-        { label: 'Bio & rate', sub: 'What parents will read', done: bio.trim() && Number(hourlyRate) > 0 }
+        { label: 'Bio & rate', sub: 'What parents will read', done: bio.trim() && Number(hourlyRate) > 0 },
+        { label: 'Location', sub: 'City & GPS', done: city.trim().length > 0 }
       ]
     : [
         { label: 'Student', sub: "Student's full name", done: studentName.trim() },
         { label: 'Class & board', sub: 'So we match the syllabus', done: studentClass && studentBoard.length },
-        { label: 'Contact', sub: 'Phone number (optional)', done: phone.trim() }
+        { label: 'Location & Contact', sub: 'City & Phone', done: city.trim().length > 0 }
       ];
   const currentIdx = steps.findIndex(s => !s.done);
   const stepClass = (s, i) => (s.done ? 'done' : i === currentIdx ? 'current' : '');
@@ -185,6 +210,18 @@ function SetupProfile() {
             </div>
           </>
         )}
+
+        <div className="setup-section">
+          <h3>Location *</h3>
+          <p style={{ fontSize: '0.875rem', marginTop: '-0.3rem', marginBottom: '0.8rem' }}>Enter your city/area so we can find matches near you.</p>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <input className="input" type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="e.g. Kochi, Kerala" style={{ flex: 1, minWidth: '200px' }} required />
+            <button type="button" className="btn btn-outline" onClick={handleDetectLocation} disabled={locLoading}>
+              {locLoading ? 'Detecting...' : <><i className="ri-map-pin-line"></i> {locationObj ? 'GPS Saved' : 'Detect GPS'}</>}
+            </button>
+          </div>
+          {locationObj && <div style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '0.4rem', fontWeight: 600 }}><i className="ri-check-line"></i> Precise coordinates captured securely.</div>}
+        </div>
 
         <div className="setup-actions">
           <button type="submit" className="btn btn-lg" disabled={loading}>{loading ? 'Saving...' : <>Complete Setup <i className="ri-arrow-right-line"></i></>}</button>
