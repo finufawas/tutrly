@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
-import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 import Avatar from '../components/Avatar';
 import { formatDate, isPast, fromISO, toISO } from '../utils/tutor';
@@ -30,6 +30,14 @@ function Dashboard() {
   
   const [startingClassId, setStartingClassId] = useState(null);
   const [stoppingClassId, setStoppingClassId] = useState(null);
+  const [platformFee, setPlatformFee] = useState(5);
+
+  const fetchFee = async () => {
+    try {
+      const snap = await getDoc(doc(db, 'settings', 'platform'));
+      if(snap.exists()) setPlatformFee(snap.data().commissionRate || 5);
+    } catch(e) {}
+  };
 
   const fetchBookings = async () => {
     if (!currentUser || !userData) return;
@@ -47,7 +55,7 @@ function Dashboard() {
     setLoadingBookings(false);
   };
 
-  useEffect(() => { fetchBookings(); }, [currentUser, userData, isTutor]);
+  useEffect(() => { fetchBookings(); fetchFee(); }, [currentUser, userData, isTutor]);
 
   const handleAccept = async (id) => {
     try { await updateDoc(doc(db, 'bookings', id), { status: 'confirmed' }); fetchBookings(); }
@@ -114,7 +122,12 @@ function Dashboard() {
   const handleStopClass = async (b) => {
     setStoppingClassId(b.id);
     try {
-      await updateDoc(doc(db, 'bookings', b.id), { actualEndTime: new Date().toISOString(), status: 'completed' });
+      await updateDoc(doc(db, 'bookings', b.id), { 
+        actualEndTime: new Date().toISOString(), 
+        status: 'completed',
+        commissionRate: platformFee,
+        hourlyRate: userData?.hourlyRate || 0
+      });
       fetchBookings();
     } catch (err) {
       console.error(err);
@@ -131,15 +144,20 @@ function Dashboard() {
   const avgRating = rated.length ? (rated.reduce((s, b) => s + b.rating, 0) / rated.length).toFixed(1) : '—';
   
   const completed = bookings.filter(b => b.status === 'completed');
+  let totalEarnings = 0;
   let totalHours = 0;
   completed.forEach(b => {
     if (b.actualStartTime && b.actualEndTime) {
       const ms = new Date(b.actualEndTime) - new Date(b.actualStartTime);
-      totalHours += ms / 3600000;
+      const hrs = ms / 3600000;
+      totalHours += hrs;
+      const rate = b.hourlyRate || userData?.hourlyRate || 0;
+      const feePercent = b.commissionRate !== undefined ? b.commissionRate : platformFee;
+      totalEarnings += (hrs * rate) * (1 - (feePercent / 100));
     }
   });
   const trackedHours = totalHours.toFixed(1);
-  const estimatedEarnings = (totalHours * (userData?.hourlyRate || 0)).toFixed(0);
+  const estimatedEarnings = totalEarnings.toFixed(0);
 
   const firstName = (userData?.name || '').split(' ')[0] || currentUser?.email;
   const child = userData?.studentName?.split(' ')[0];

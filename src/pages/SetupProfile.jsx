@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
 
 const TINTS = ['tint-0', 'tint-2', 'tint-1', 'tint-3', 'tint-4'];
 
@@ -29,12 +29,22 @@ function SetupProfile() {
   const [city, setCity] = useState(userData?.city || '');
   const [locationObj, setLocationObj] = useState(userData?.location || null);
   const [locLoading, setLocLoading] = useState(false);
+  const [platformFee, setPlatformFee] = useState(5);
 
   const allSubjects = ['Mathematics', 'Science', 'English', 'Hindi', 'Social Studies', 'Computer Science', 'Physics', 'Chemistry', 'Biology'];
   const allBoards = ['State', 'CBSE', 'ICSE'];
   const allDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-  useEffect(() => { if (userData?.profileComplete) navigate('/'); }, [userData, navigate]);
+  useEffect(() => { 
+    if (userData?.profileComplete) navigate('/'); 
+    const fetchFee = async () => {
+      try {
+        const snap = await getDoc(doc(db, 'settings', 'platform'));
+        if (snap.exists()) setPlatformFee(snap.data().commissionRate || 5);
+      } catch (e) {}
+    };
+    fetchFee();
+  }, [userData, navigate]);
 
   const toggleItem = (arr, setArr, item) => setArr(arr.includes(item) ? arr.filter(i => i !== item) : [...arr, item]);
   const addSlot = (day) => setAvailability({ ...availability, [day]: [...(availability[day] || []), { start: '09:00', end: '10:00' }] });
@@ -179,6 +189,11 @@ function SetupProfile() {
             <div className="setup-section">
               <h3>Hourly Rate (₹) *</h3>
               <input className="input" type="number" value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} placeholder="e.g. 500" min="1" style={{ maxWidth: 240 }} />
+              {hourlyRate > 0 && (
+                <p style={{ fontSize: '0.85rem', color: 'var(--primary)', marginTop: '0.5rem', fontWeight: 500 }}>
+                  <i className="ri-information-line"></i> Tutrly takes a {platformFee}% platform fee. Your net take-home will be ₹{Math.round(hourlyRate * (1 - (platformFee / 100)))}/hr.
+                </p>
+              )}
             </div>
             <div className="setup-section">
               <h3>Short Bio *</h3>

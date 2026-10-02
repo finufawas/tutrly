@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import Cropper from 'react-easy-crop';
 
@@ -58,6 +58,7 @@ function EditProfile() {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [platformFee, setPlatformFee] = useState(5);
 
   const availableClasses = [...Array(12)].map((_, i) => `Class ${i+1}`);
   const availableBoards = ['State', 'CBSE', 'ICSE'];
@@ -78,6 +79,14 @@ function EditProfile() {
         }
       });
     }
+
+    const fetchFee = async () => {
+      try {
+        const snap = await getDoc(doc(db, 'settings', 'platform'));
+        if (snap.exists()) setPlatformFee(snap.data().commissionRate || 5);
+      } catch(e) {}
+    };
+    fetchFee();
   }, [userData]);
 
   const handleCheckboxChange = (e, field) => {
@@ -270,6 +279,11 @@ function EditProfile() {
                   min="0"
                   style={{ width: '100%' }}
                 />
+                {formData.hourlyRate > 0 && (
+                  <p style={{ fontSize: '0.85rem', color: 'var(--primary)', marginTop: '0.5rem', fontWeight: 500 }}>
+                    <i className="ri-information-line"></i> Tutrly takes a {platformFee}% platform fee. Your net take-home will be ₹{Math.round(formData.hourlyRate * (1 - (platformFee / 100)))}/hr.
+                  </p>
+                )}
               </div>
 
               <div>

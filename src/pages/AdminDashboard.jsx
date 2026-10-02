@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { collection, query, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, getDocs, doc, updateDoc, deleteDoc, getDoc, setDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 
 function AdminDashboard() {
@@ -12,8 +12,10 @@ function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview'); // overview, tutors, parents, bookings
+  const [activeTab, setActiveTab] = useState('overview'); // overview, tutors, parents, bookings, settings
   const [selectedUser, setSelectedUser] = useState(null); // For modal
+  const [platformFee, setPlatformFee] = useState(5);
+  const [savingFee, setSavingFee] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -27,6 +29,11 @@ function AdminDashboard() {
       let bRes = [];
       bSnap.forEach((d) => bRes.push({ id: d.id, ...d.data() }));
       setBookings(bRes);
+
+      const settingsSnap = await getDoc(doc(db, 'settings', 'platform'));
+      if (settingsSnap.exists()) {
+        setPlatformFee(settingsSnap.data().commissionRate || 5);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -104,12 +111,31 @@ function AdminDashboard() {
 
   // Calculate total tracked hours
   let totalHours = 0;
+  let companyRevenue = 0;
   bookings.filter(b => b.status === 'completed').forEach(b => {
     if (b.actualStartTime && b.actualEndTime) {
       const ms = new Date(b.actualEndTime) - new Date(b.actualStartTime);
-      totalHours += ms / 3600000;
+      const hrs = ms / 3600000;
+      totalHours += hrs;
+      if (b.commissionRate && b.hourlyRate) {
+        companyRevenue += (hrs * b.hourlyRate * (b.commissionRate / 100));
+      } else if (b.hourlyRate) {
+        // Fallback for old bookings using current platform fee if no rate saved
+        companyRevenue += (hrs * b.hourlyRate * (platformFee / 100));
+      }
     }
   });
+
+  const handleSaveFee = async () => {
+    setSavingFee(true);
+    try {
+      await setDoc(doc(db, 'settings', 'platform'), { commissionRate: Number(platformFee) }, { merge: true });
+      alert('Platform fee updated successfully!');
+    } catch (e) {
+      alert('Error updating fee: ' + e.message);
+    }
+    setSavingFee(false);
+  };
 
   const getStatusPill = (tutor) => {
     if (tutor.isSuspended) return <span style={pillStyle('#ef4444')}>Suspended</span>;
@@ -140,6 +166,9 @@ function AdminDashboard() {
         <button onClick={() => setActiveTab('bookings')} style={sidebarBtn(activeTab === 'bookings')}>
           <i className="ri-calendar-event-line"></i> Bookings ({bookings.length})
         </button>
+        <button onClick={() => setActiveTab('settings')} style={sidebarBtn(activeTab === 'settings')}>
+          <i className="ri-settings-3-line"></i> Platform Settings
+        </button>
         
         <div style={{ flex: 1 }}></div>
         <button onClick={handleSignOut} style={{ ...sidebarBtn(false), color: '#ef4444', marginTop: 'auto' }}>
@@ -169,6 +198,10 @@ function AdminDashboard() {
               <div style={metricCard('#8b5cf6')}>
                 <h3 style={{ color: '#64748b', fontSize: '0.9rem', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Tracked Hours</h3>
                 <p style={{ fontSize: '2.5rem', fontWeight: 800, color: '#0f172a' }}>{totalHours.toFixed(1)}<span style={{ fontSize: '1.5rem', color: '#94a3b8' }}>h</span></p>
+              </div>
+              <div style={metricCard('#10b981')}>
+                <h3 style={{ color: '#64748b', fontSize: '0.9rem', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Platform Revenue</h3>
+                <p style={{ fontSize: '2.5rem', fontWeight: 800, color: '#0f172a' }}>₹{companyRevenue.toFixed(0)}</p>
               </div>
             </div>
 
@@ -310,6 +343,38 @@ function AdminDashboard() {
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div>
+            <h1 style={{ fontSize: '2rem', marginBottom: '2rem', color: '#0f172a', fontWeight: 800 }}>Platform Settings</h1>
+            <div style={{ background: 'white', padding: '2rem', borderRadius: '1rem', border: '1px solid #e2e8f0', maxWidth: '600px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+              
+              <div style={{ marginBottom: '2rem' }}>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', color: '#0f172a' }}>Commission Rate (%)</label>
+                <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>This is the percentage of the tutor's hourly rate that the platform takes as a fee. Existing active classes won't be affected retroactively until they finish.</p>
+                
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <input 
+                    type="number" 
+                    min="0" max="100" 
+                    value={platformFee} 
+                    onChange={e => setPlatformFee(e.target.value)} 
+                    style={{ padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', fontSize: '1.1rem', width: '100px', fontWeight: 600 }} 
+                  />
+                  <span style={{ fontSize: '1.2rem', fontWeight: 600, color: '#64748b' }}>%</span>
+                </div>
+              </div>
+
+              <button 
+                onClick={handleSaveFee} 
+                disabled={savingFee}
+                style={{ background: '#3b82f6', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', fontWeight: 600, border: 'none', cursor: savingFee ? 'not-allowed' : 'pointer', transition: 'all 0.2s', fontSize: '1rem' }}
+              >
+                {savingFee ? 'Saving...' : 'Save Settings'}
+              </button>
             </div>
           </div>
         )}
