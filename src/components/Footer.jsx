@@ -1,31 +1,17 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 
 function Footer() {
   const location = useLocation();
   if (location.pathname === '/admin') return null;
   return (
-    <footer>
-      <div className="footer-content">
-        <div className="footer-brand">
-          <div className="logo"><i className="ri-book-open-line"></i> Tutrly</div>
-          <p>Connecting curious minds with expert home educators.</p>
-          <div className="social-links">
-            <a href="#"><i className="ri-facebook-fill"></i></a><a href="#"><i className="ri-twitter-fill"></i></a><a href="#"><i className="ri-instagram-fill"></i></a>
-          </div>
+    <footer style={{ borderTop: '1px solid var(--border)', padding: '1.5rem 5%', background: 'var(--surface)', marginTop: 'auto' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', color: 'var(--text-light)', fontSize: '0.95rem' }}>
+        <p style={{ margin: 0, fontWeight: 500 }}>&copy; {new Date().getFullYear()} Tutrly. All rights reserved.</p>
+        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', fontWeight: 500 }}>
+          <a href="mailto:support@tutrly.com" style={{ color: 'var(--text-light)', textDecoration: 'none' }} onMouseOver={e => e.target.style.color='var(--ink)'} onMouseOut={e => e.target.style.color='var(--text-light)'}>Contact Support</a>
+          <Link to="/privacy" style={{ color: 'var(--text-light)', textDecoration: 'none' }} onMouseOver={e => e.target.style.color='var(--ink)'} onMouseOut={e => e.target.style.color='var(--text-light)'}>Privacy Policy</Link>
         </div>
-        <div className="footer-links">
-          <h4>For Parents</h4><span style={{color: 'var(--text-light)', display: 'block', marginBottom: '0.75rem'}}>Find a Tutor</span><span style={{color: 'var(--text-light)', display: 'block', marginBottom: '0.75rem'}}>Request a Tutor</span><span style={{color: 'var(--text-light)', display: 'block', marginBottom: '0.75rem'}}>Pricing (Coming Soon)</span>
-        </div>
-        <div className="footer-links">
-          <h4>For Tutors</h4><span style={{color: 'var(--text-light)', display: 'block', marginBottom: '0.75rem'}}>Join as Tutor</span><span style={{color: 'var(--text-light)', display: 'block', marginBottom: '0.75rem'}}>Tutor Guidelines</span><span style={{color: 'var(--text-light)', display: 'block', marginBottom: '0.75rem'}}>Success Stories</span>
-        </div>
-        <div className="footer-links">
-          <h4>Company</h4><span style={{color: 'var(--text-light)', display: 'block', marginBottom: '0.75rem'}}>About Us</span><span style={{color: 'var(--text-light)', display: 'block', marginBottom: '0.75rem'}}>Contact Support</span><span style={{color: 'var(--text-light)', display: 'block', marginBottom: '0.75rem'}}>Privacy Policy</span>
-        </div>
-      </div>
-      <div className="footer-bottom">
-        <p>&copy; {new Date().getFullYear()} Tutrly. All rights reserved.</p>
       </div>
     </footer>
   );

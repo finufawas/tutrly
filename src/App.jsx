@@ -13,6 +13,7 @@ import Search from './pages/Search';
 import BookDemo from './pages/BookDemo';
 import TutorProfile from './pages/TutorProfile';
 import AdminDashboard from './pages/AdminDashboard';
+import Privacy from './pages/Privacy';
 import NotFound from './pages/NotFound';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ScrollToTop from './components/ScrollToTop';
@@ -52,6 +53,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/privacy" element={<Privacy />} />
           <Route path="/setup-profile" element={P(<SetupProfile />)} />
           <Route path="/search" element={P(<Search />)} />
           <Route path="/tutor/:tutorId" element={P(<TutorProfile />)} />
