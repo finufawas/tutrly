@@ -7,6 +7,7 @@ function Navbar() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const isHomePage = location.pathname === '/';
+  if (location.pathname === '/admin') return null;
   const { currentUser, userData } = useAuth();
   const isTutor = userData?.role === 'tutor';
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');

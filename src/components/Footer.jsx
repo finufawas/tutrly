@@ -1,6 +1,9 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 
 function Footer() {
+  const location = useLocation();
+  if (location.pathname === '/admin') return null;
   return (
     <footer>
       <div className="footer-content">

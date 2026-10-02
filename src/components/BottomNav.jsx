@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 // Mobile-only tab bar (CSS hides it above 768px). Signed-in users only.
-const HIDDEN_ON = ['/login', '/setup-profile', '/tutor/', '/book/'];
+const HIDDEN_ON = ['/login', '/setup-profile', '/tutor/', '/book/', '/admin'];
 
 function BottomNav() {
   const { currentUser, userData } = useAuth();
