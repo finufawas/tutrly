@@ -265,9 +265,9 @@ input, select, textarea { font: inherit; color: var(--ink); }
 .search-field input, .search-field select { border: none; outline: none; background: transparent; font-size: 1.02rem; font-weight: 700; width: 100%; padding: 0; -webkit-appearance: none; appearance: none; cursor: pointer; }
 .search-card .btn { height: 58px; border-radius: 20px; font-size: 1.02rem; }
 
-.hero-bento { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 260px 150px auto; gap: 14px; }
-.hero-photo { grid-row: span 2; border-radius: 32px; background: var(--lilac); position: relative; overflow: hidden; padding: 14px; }
-.hero-photo img.cover { width: 100%; height: 100%; object-fit: cover; border-radius: 22px; display: block; }
+.hero-bento { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 280px auto auto; gap: 14px; }
+.hero-photo { grid-column: 1 / -1; grid-row: 1; border-radius: 32px; background: var(--lilac); position: relative; overflow: hidden; padding: 14px; }
+.hero-photo img.cover { width: 100%; height: 100%; object-fit: cover; object-position: top center; border-radius: 22px; display: block; }
 .stat-tile { border-radius: 32px; padding: 1.35rem; display: flex; flex-direction: column; justify-content: space-between; }
 .stat-tile .icon { width: 44px; height: 44px; border-radius: 14px; background: var(--surface); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: var(--success); }
 .subjects-tile { grid-column: span 2; border-radius: 32px; background: var(--surface); padding: 1rem 1.2rem; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
@@ -537,9 +537,7 @@ footer { background: var(--surface); margin: 0 16px 16px; border-radius: 36px; p
     .hero-copy { padding-top: 0.5rem; }
     .search-fields { grid-template-columns: 1fr 1fr; }
     .search-fields .search-field:nth-child(3) { grid-column: span 2; }
-    .hero-bento { grid-template-columns: 1fr 1fr; grid-template-rows: 280px auto auto; }
-    .hero-photo { grid-column: 1 / -1; grid-row: 1; }
-    .hero-photo img.cover { object-position: top center; }
+
     .stat-tile { padding: 1.15rem; }
     .section { padding-left: 16px; padding-right: 16px; }
     .cta-tile { margin: 1rem 16px 2rem; }
