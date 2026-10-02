@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { auth, db } from '../firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, signOut } from 'firebase/auth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import heroTutorImg from '../assets/images/hero_tutor.jpg';
 import './Login.css';
@@ -38,6 +38,17 @@ function Login() {
     try {
       if (isLogin) {
         const cred = await signInWithEmailAndPassword(auth, email, password);
+        
+        if (!cred.user.emailVerified) {
+          try {
+            await sendEmailVerification(cred.user);
+          } catch (e) {
+            // Ignore rate limit errors if they spam the login button
+          }
+          await signOut(auth);
+          throw new Error('Please verify your email address to continue. A verification link has been sent to your email.');
+        }
+
         const userDoc = await getDoc(doc(db, 'users', cred.user.uid));
         const data = userDoc.data();
         navigate(data && data.profileComplete ? '/' : '/setup-profile');
@@ -45,6 +56,7 @@ function Login() {
         if (password.length < 8) throw new Error('Password must be at least 8 characters long.');
         if (password !== confirmPassword) throw new Error('Passwords do not match.');
         const cred = await createUserWithEmailAndPassword(auth, email, password);
+        
         await setDoc(doc(db, 'users', cred.user.uid), {
           name, email, role,
           createdAt: new Date().toISOString(),
@@ -52,7 +64,14 @@ function Login() {
           profileComplete: false,
           subjects: [], classLevels: [], bio: '', hourlyRate: 0
         });
-        navigate('/setup-profile');
+
+        await sendEmailVerification(cred.user);
+        await signOut(auth);
+        
+        setMessage('Registration successful! Please check your email inbox to verify your account.');
+        setIsLogin(true);
+        setPassword('');
+        setConfirmPassword('');
       }
     } catch (err) {
       setError(err.message.replace('Firebase: ', ''));
