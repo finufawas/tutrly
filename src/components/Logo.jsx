@@ -15,7 +15,13 @@ function Logo({ size = 30, label = 'Tutrly', suffix }) {
   return (
     <span className="brand">
       <LogoMark size={size} />
-      <span>{label}</span>
+      <span>
+        {label === 'Tutrly' ? (
+          <>Tutr<span style={{ color: 'var(--accent)' }}>ly</span></>
+        ) : (
+          label
+        )}
+      </span>
       {suffix && <span className="brand-tag">{suffix}</span>}
     </span>
   );
