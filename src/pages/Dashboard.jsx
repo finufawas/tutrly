@@ -245,10 +245,6 @@ function Dashboard() {
           )}
           <div className="dash-head">
             <h1>Hi {firstName}{pending.length > 0 && <> <span className="accent">—</span> {pending.length} parent{pending.length > 1 ? 's are' : ' is'} waiting</>}</h1>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button className="btn-light" onClick={() => { navigator.clipboard.writeText(`Hi! I'm teaching ${userData?.subjects?.[0] || 'students'} in ${userData?.city || 'your area'}. Book a home class with me on Tutrly: ${window.location.origin}/tutor/${currentUser.uid}`); alert('Profile link copied to clipboard! Share it on WhatsApp to get more students.'); }}><i className="ri-share-forward-line"></i> Share Profile</button>
-              <Link to="/edit-profile" className="btn"><i className="ri-time-line"></i>Edit Availability</Link>
-            </div>
           </div>
 
           <div className="stat-row">
@@ -338,7 +334,6 @@ function Dashboard() {
       <div className="container">
         <div className="dash-head">
           <h1>Hi {firstName}{child && <> <span className="accent">—</span> here's {child}'s week</>}</h1>
-          <Link to="/search" className="btn"><i className="ri-search-line"></i>Find a tutor</Link>
         </div>
 
         <div className="dash-bento">
